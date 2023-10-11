@@ -9,12 +9,17 @@ def preprocess_data(data, selected_columns, preprocessing_method):
     elif preprocessing_method == "Imputation":
         for column in selected_columns:
             if data[column].dtype == 'object':
-                data[column].fillna(data[column].mode()[0], inplace=True)
-            else:
-                if len(data[column].unique()) > len(data) * 0.1:
-                    data[column].fillna(data[column].mean(), inplace=True)
-                else:
-                    data[column].fillna(data[column].mode()[0], inplace=True)
+                # Impute with mode based on the most frequent value
+                mode_value = data[column].mode()[0]
+                data[column].fillna(mode_value, inplace=True)
+            elif data[column].dtype == 'float64':
+                # Calculate the mode for numerical columns
+                mode_value = data[column].mode().values[0]
+                if not pd.notna(mode_value):
+                    mode_value = data[column].mean()
+                data[column].fillna(mode_value, inplace=True)
+    # Only keep selected columns in the preprocessed data
+    data = data[selected_columns]
     return data
 
 # Fungsi untuk memeriksa apakah file Excel memiliki sel yang digabung (merged)
@@ -68,12 +73,7 @@ if uploaded_file is not None:
     # Allow users to select preprocessing method
     preprocessing_method = st.sidebar.radio("Select preprocessing method", ("Drop", "Imputation"))
     
-    if preprocessing_method == "Drop":
+    if preprocessing_method in ["Drop", "Imputation"]:
         preprocessed_data = preprocess_data(data.copy(), selected_columns, preprocessing_method)
-        st.write("Preprocessed Data (Dropped Null Values):")
-        st.write(preprocessed_data)
-    
-    elif preprocessing_method == "Imputation":
-        preprocessed_data = preprocess_data(data.copy(), selected_columns, preprocessing_method)
-        st.write("Preprocessed Data (Imputed with Mode for Objects, Mean/Mode for Numerics):")
+        st.write(f"Preprocessed Data ({preprocessing_method} Method):")
         st.write(preprocessed_data)
