@@ -17,7 +17,7 @@ def preprocess_data(data, selected_columns, preprocessing_method):
                     data[column].fillna(data[column].mode()[0], inplace=True)
     return data
 
-# Function to check if an Excel file has merged cells
+# Fungsi untuk memeriksa apakah file Excel memiliki sel yang digabung (merged)
 def is_excel_merged(file_path):
     try:
         workbook = openpyxl.load_workbook(file_path, read_only=True)
@@ -28,74 +28,52 @@ def is_excel_merged(file_path):
                     return True
         return False
     except Exception as e:
-        return True  # Assume there is an error, so display the "file doesn't meet criteria" message
+        return True  # Anggap saja terdapat error, sehingga munculkan pesan "file tidak memenuhi kriteria"
 
-# Function to verify if a file meets the criteria for uploading
+# Fungsi untuk memeriksa apakah file CSV atau Excel memenuhi kriteria
 def verify_file(file):
     if file is not None:
         file_name = file.name
         if file_name.endswith('.csv'):
             df = pd.read_csv(file)
             if df.empty or df.shape != df.dropna().shape:
-                return False
+                return f"File '{file_name}' does not meet the criteria"
             else:
-                return True
+                return f"File '{file_name}' meets the criteria"
         elif file_name.endswith(('.xls', '.xlsx')):
             if is_excel_merged(file):
-                return False
+                return f"File '{file_name}' does not meet the criteria"
             else:
-                return True
-    return False
+                return f"File '{file_name}' meets the criteria"
+    return "Please upload a file."
 
-# Streamlit page title
-st.title("Students Clustering at Cendekia Harapan School")
+st.title("Clustering Peserta Didik Sekolah Cendekia Harapan")
 
-# HTML representation of logo and title
-st.markdown(
-    """
-    <div style="display: flex; align-items: center; justify-content: center;">
-        <img src="https://www.example.com/logo.png" 
-        alt="Logo" style="width: 100px; height: 100px;">
-        <h1 style="margin-left: 20px;">Students Clustering at Cendekia Harapan School</h1>
-    </div>
-    """
-    , unsafe_allow_html=True
-)
+uploaded_file = st.file_uploader("Choose file CSV", type=["csv", "xls", "xlsx"])
 
-# File upload section
-uploaded_files = st.file_uploader("Upload one or more CSV or Excel Files:", type=["csv", "xls", "xlsx"], accept_multiple_files=True)
-
-uploaded_file_names = []
-
-if uploaded_files is not None:
-    for uploaded_file in uploaded_files:
-        with st.empty():
-            if uploaded_file.name in uploaded_file_names:
-                st.error(f"File '{uploaded_file.name}' is a duplicate and will not be processed.")
-            else:
-                uploaded_file_names.append(uploaded_file.name)
-                if verify_file(uploaded_file):
-                    st.success(f"File '{uploaded_file.name}' meets the criteria")
-                    
-                    # Preprocessing options for each uploaded file
-                    st.sidebar.header(f"Data Preprocessing for {uploaded_file.name}")
-                    
-                    # Allow users to select columns to be clustered
-                    selected_columns = st.sidebar.multiselect("Select columns to be clustered", df.columns)
-                    
-                    # Allow users to select preprocessing method
-                    preprocessing_method = st.sidebar.radio("Select preprocessing method", ("Drop", "Imputation"))
-                    
-                    # Preprocess data if the user selected options
-                    if st.sidebar.button("Preprocess Data"):
-                        if preprocessing_method == "Drop":
-                            preprocessed_data = preprocess_data(df.copy(), selected_columns, preprocessing_method)
-                            st.write("Preprocessed Data (Dropped Null Values):")
-                            st.write(preprocessed_data)
-                        elif preprocessing_method == "Imputation":
-                            preprocessed_data = preprocess_data(df.copy(), selected_columns, preprocessing_method)
-                            st.write("Preprocessed Data (Imputed with Mode for Objects, Mean/Mode for Numerics):")
-                            st.write(preprocessed_data)
-                    
-                else:
-                    st.error(f"File '{uploaded_file.name}' does not meet the criteria")
+if uploaded_file is not None:
+    st.write("Uploaded Files:")
+    st.write(uploaded_file.name)
+    
+    data = pd.read_csv(uploaded_file)
+    
+    st.write("Input File:")
+    st.write(data)
+    
+    st.sidebar.header("Data Preprocessing")
+    
+    # Allow users to select columns to be clustered
+    selected_columns = st.sidebar.multiselect("Select columns to be clustered", data.columns)
+    
+    # Allow users to select preprocessing method
+    preprocessing_method = st.sidebar.radio("Select preprocessing method", ("Drop", "Imputation"))
+    
+    if preprocessing_method == "Drop":
+        preprocessed_data = preprocess_data(data.copy(), selected_columns, preprocessing_method)
+        st.write("Preprocessed Data (Dropped Null Values):")
+        st.write(preprocessed_data)
+    
+    elif preprocessing_method == "Imputation":
+        preprocessed_data = preprocess_data(data.copy(), selected_columns, preprocessing_method)
+        st.write("Preprocessed Data (Imputed with Mode for Objects, Mean/Mode for Numerics):")
+        st.write(preprocessed_data)
