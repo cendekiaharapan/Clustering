@@ -39,7 +39,8 @@ st.title("")  # Judul kosong untuk menyediakan ruang untuk logo
 st.markdown(
     """
     <div style="display: flex; align-items: center; justify-content: center;">
-        <img src="https://url/logo.png" alt="Logo" style="width: 100px; height: 100px;">
+        <img src="https://www.google.com/url?sa=i&url=https%3A%2F%2Flumina.mba%2Fjob-opening%2Fpublic%2Fdetail%2F68d60331-8a30-4136-8c3a-aa403696496d&psig=AOvVaw1sy7Tq7CSSywuzjE8rCKN3&ust=1697072384295000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCMiwjZrl7IEDFQAAAAAdAAAAABAE" 
+        alt="Logo" style="width: 100px; height: 100px;">
         <h1 style="margin-left: 20px;">Students Clustering at Cendekia Harapan School</h1>
     </div>
     """
