@@ -33,7 +33,7 @@ def verify_file(file):
     return "Please upload a file."
 
 # Halaman Streamlit
-st.title("Students Clustering at Cendekia Harapan School")
+st.title("Clustering App")
 
 uploaded_file = st.file_uploader("Upload a CSV or Excel File:", type=["csv", "xls", "xlsx"])
 
