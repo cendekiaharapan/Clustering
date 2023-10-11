@@ -22,55 +22,24 @@ def verify_file(file):
         if file_name.endswith('.csv'):
             df = pd.read_csv(file)
             if df.empty or df.shape != df.dropna().shape:
-                return False
+                return f"File '{file_name}' does not meet the criteria"
             else:
-                return True
+                return f"File '{file_name}' meets the criteria"
         elif file_name.endswith(('.xls', '.xlsx')):
             if is_excel_merged(file):
-                return False
+                return f"File '{file_name}' does not meet the criteria"
             else:
-                return True
-    return False
+                return f"File '{file_name}' meets the criteria"
+    return "Please upload a file."
 
 # Halaman Streamlit
-st.title("")  # Judul kosong untuk menyediakan ruang untuk logo
+st.title("Students Clustering at Cendekia Harapan School")
 
-# Tambahkan logo dan judul dalam elemen HTML
-st.markdown(
-    """
-    <div style="display: flex; align-items: center; justify-content: center;">
-        <img src="https://www.google.com/url?sa=i&url=https%3A%2F%2Flumina.mba%2Fjob-opening%2Fpublic%2Fdetail%2F68d60331-8a30-4136-8c3a-aa403696496d&psig=AOvVaw1sy7Tq7CSSywuzjE8rCKN3&ust=1697072384295000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCMiwjZrl7IEDFQAAAAAdAAAAABAE" 
-        alt="Logo" style="width: 100px; height: 100px;">
-        <h1 style="margin-left: 20px;">Students Clustering at Cendekia Harapan School</h1>
-    </div>
-    """
-    , unsafe_allow_html=True
-)
+uploaded_file = st.file_uploader("Upload a CSV or Excel File:", type=["csv", "xls", "xlsx"])
 
-uploaded_files = st.file_uploader("Upload one or more CSV or Excel Files:", type=["csv", "xls", "xlsx"], accept_multiple_files=True)
-
-uploaded_file_names = []
-
-if uploaded_files is not None:
-    for uploaded_file in uploaded_files:
-        with st.empty():
-            if uploaded_file.name in uploaded_file_names:
-                st.error(f"File '{uploaded_file.name}' is a duplicate and will not be processed.")
-            else:
-                uploaded_file_names.append(uploaded_file.name)
-                if verify_file(uploaded_file):
-                    st.success(f"File '{uploaded_file.name}' meets the criteria")
-                else:
-                    st.error(f"File '{uploaded_file.name}' does not meet the criteria")
-
-# Tombol Verify Files
-if st.button("Verify Files"):
-    if uploaded_files is not None:
-        for uploaded_file in uploaded_files:
-            with st.empty():
-                if verify_file(uploaded_file):
-                    st.success(f"File '{uploaded_file.name}' meets the criteria")
-                else:
-                    st.error(f"File '{uploaded_file.name}' does not meet the criteria")
+if uploaded_file is not None:
+    message = verify_file(uploaded_file)
+    if "meets the criteria" in message:
+        st.success(message)
     else:
-        st.warning("Please upload one or more files first!")
+        st.error(message)
