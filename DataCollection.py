@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import openpyxl
+from io import BytesIO
 
 # Function to preprocess the data based on user selections
 def preprocess_data(data, selected_columns, preprocessing_method):
@@ -15,7 +16,7 @@ def preprocess_data(data, selected_columns, preprocessing_method):
             elif data[column].dtype == 'float64':
                 # Calculate the mode for numerical columns
                 mode_value = data[column].mode().values[0]
-                if not pd.notna(mode_value):
+                if pd.isna(mode_value):
                     mode_value = data[column].mean()
                 data[column].fillna(mode_value, inplace=True)
     # Only keep selected columns in the preprocessed data
@@ -23,9 +24,11 @@ def preprocess_data(data, selected_columns, preprocessing_method):
     return data
 
 # Function to check if the Excel file has merged cells
-def is_excel_merged(file_path):
+def is_excel_merged(file):
     try:
-        workbook = openpyxl.load_workbook(file_path, read_only=True)
+        file.seek(0)
+        content = BytesIO(file.read())
+        workbook = openpyxl.load_workbook(content, read_only=True)
         for sheet_name in workbook.sheetnames:
             sheet = workbook[sheet_name]
             for merged_cells in sheet.merged_cells.ranges:
@@ -33,18 +36,21 @@ def is_excel_merged(file_path):
                     return True
         return False
     except Exception as e:
-        return True
+        return True  # Assume an error, and show the message "File does not meet the criteria"
 
-# Function to verify if the file meets the criteria
+# Function to check if the uploaded file meets the criteria
 def verify_file(file):
     if file is not None:
         file_name = file.name
         if file_name.endswith('.csv'):
-            df = pd.read_csv(file)
-            if df.empty or df.shape != df.dropna().shape:
-                return f"File '{file_name}' does not meet the criteria"
-            else:
-                return f"File '{file_name}' meets the criteria"
+            try:
+                df = pd.read_csv(file)
+                if df.empty or df.shape != df.dropna().shape:
+                    return f"File '{file_name}' does not meet the criteria"
+                else:
+                    return f"File '{file_name}' meets the criteria"
+            except Exception as e:
+                return f"Error: {e}"
         elif file_name.endswith(('.xls', '.xlsx')):
             if is_excel_merged(file):
                 return f"File '{file_name}' does not meet the criteria"
@@ -54,19 +60,19 @@ def verify_file(file):
 
 st.title("Clustering Peserta Didik Sekolah Cendekia Harapan")
 
-uploaded_file = st.file_uploader("Choose file CSV or Excel", type=["csv", "xls", "xlsx"])
+uploaded_file = st.file_uploader("Choose file CSV", type=["csv", "xls", "xlsx"])
 
 if uploaded_file is not None:
     st.write("Uploaded Files:")
     st.write(uploaded_file.name)
     
-    if uploaded_file.name.endswith('.csv'):
-        data = pd.read_csv(uploaded_file)
-    else:
-        data = pd.read_excel(uploaded_file)
+    data = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
     
     st.write("Input File:")
     st.write(data)
+    
+    verification_result = verify_file(uploaded_file)
+    st.write(verification_result)
     
     st.sidebar.header("Data Preprocessing")
     
