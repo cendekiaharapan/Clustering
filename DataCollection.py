@@ -46,17 +46,18 @@ def verify_file(file):
             try:
                 df = pd.read_csv(file)
                 if df.empty or df.shape != df.dropna().shape:
-                    return f"File '{file_name}' does not meet the criteria"
+                    return None, f"File '{file_name}' does not meet the criteria"
                 else:
-                    return f"File '{file_name}' meets the criteria"
+                    return df, f"File '{file_name}' meets the criteria"
             except Exception as e:
-                return f"Error: {e}"
+                return None, f"Error: {e}"
         elif file_name.endswith(('.xls', '.xlsx')):
             if is_excel_merged(file):
-                return f"File '{file_name}' does not meet the criteria"
+                return None, f"File '{file_name}' does not meet the criteria"
             else:
-                return f"File '{file_name}' meets the criteria"
-    return "Please upload a file."
+                df = pd.read_excel(file)
+                return df, f"File '{file_name}' meets the criteria"
+    return None, "Please upload a file."
 
 st.title("Clustering Peserta Didik Sekolah Cendekia Harapan")
 
@@ -66,23 +67,24 @@ if uploaded_file is not None:
     st.write("Uploaded Files:")
     st.write(uploaded_file.name)
     
-    data = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
+    data, verification_result = verify_file(uploaded_file)
     
-    st.write("Input File:")
-    st.write(data)
-    
-    verification_result = verify_file(uploaded_file)
-    st.write(verification_result)
-    
-    st.sidebar.header("Data Preprocessing")
-    
-    # Allow users to select columns to be clustered
-    selected_columns = st.sidebar.multiselect("Select columns to be clustered", data.columns)
-    
-    # Allow users to select preprocessing method
-    preprocessing_method = st.sidebar.radio("Select preprocessing method", ("Drop", "Imputation"))
-    
-    if preprocessing_method in ["Drop", "Imputation"]:
-        preprocessed_data = preprocess_data(data.copy(), selected_columns, preprocessing_method)
-        st.write(f"Preprocessed Data ({preprocessing_method} Method):")
-        st.write(preprocessed_data)
+    if data is not None:
+        st.write("Input File:")
+        st.write(data)
+        st.write(verification_result)
+        
+        st.sidebar.header("Data Preprocessing")
+        
+        # Allow users to select columns to be clustered
+        selected_columns = st.sidebar.multiselect("Select columns to be clustered", data.columns)
+        
+        # Allow users to select preprocessing method
+        preprocessing_method = st.sidebar.radio("Select preprocessing method", ("Drop", "Imputation"))
+        
+        if preprocessing_method in ["Drop", "Imputation"]:
+            preprocessed_data = preprocess_data(data.copy(), selected_columns, preprocessing_method)
+            st.write(f"Preprocessed Data ({preprocessing_method} Method):")
+            st.write(preprocessed_data)
+    else:
+        st.write(verification_result)
