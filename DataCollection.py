@@ -22,7 +22,7 @@ def preprocess_data(data, selected_columns, preprocessing_method):
     data = data[selected_columns]
     return data
 
-# Function to check whether an Excel file has merged cells
+# Function to check if the Excel file has merged cells
 def is_excel_merged(file_path):
     try:
         workbook = openpyxl.load_workbook(file_path, read_only=True)
@@ -33,9 +33,9 @@ def is_excel_merged(file_path):
                     return True
         return False
     except Exception as e:
-        return True  # Assume an error occurred, thus display the message "file does not meet the criteria"
+        return True
 
-# Function to check whether a CSV or Excel file meets the criteria
+# Function to verify if the file meets the criteria
 def verify_file(file):
     if file is not None:
         file_name = file.name
@@ -47,38 +47,36 @@ def verify_file(file):
                 return f"File '{file_name}' meets the criteria"
         elif file_name.endswith(('.xls', '.xlsx')):
             if is_excel_merged(file):
-                return f"File '{file_name}' does not meet the criteria (contains merged cells)"
+                return f"File '{file_name}' does not meet the criteria"
             else:
                 return f"File '{file_name}' meets the criteria"
     return "Please upload a file."
 
 st.title("Clustering Peserta Didik Sekolah Cendekia Harapan")
 
-uploaded_file = st.file_uploader("Choose file CSV", type=["csv", "xls", "xlsx"])
+uploaded_file = st.file_uploader("Choose file CSV or Excel", type=["csv", "xls", "xlsx"])
 
 if uploaded_file is not None:
-    file_status = verify_file(uploaded_file)
-    st.write("File Verification Status:")
-    st.write(file_status)
-
-    if "does not meet the criteria" not in file_status:
-        st.write("Uploaded Files:")
-        st.write(uploaded_file.name)
-        
-        data = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
-        
-        st.write("Input File:")
-        st.write(data)
-        
-        st.sidebar.header("Data Preprocessing")
-        
-        # Allow users to select columns to be clustered
-        selected_columns = st.sidebar.multiselect("Select columns to be clustered", data.columns)
-        
-        # Allow users to select preprocessing method
-        preprocessing_method = st.sidebar.radio("Select preprocessing method", ("Drop", "Imputation"))
-        
-        if preprocessing_method in ["Drop", "Imputation"]:
-            preprocessed_data = preprocess_data(data.copy(), selected_columns, preprocessing_method)
-            st.write(f"Preprocessed Data ({preprocessing_method} Method):")
-            st.write(preprocessed_data)
+    st.write("Uploaded Files:")
+    st.write(uploaded_file.name)
+    
+    if uploaded_file.name.endswith('.csv'):
+        data = pd.read_csv(uploaded_file)
+    else:
+        data = pd.read_excel(uploaded_file)
+    
+    st.write("Input File:")
+    st.write(data)
+    
+    st.sidebar.header("Data Preprocessing")
+    
+    # Allow users to select columns to be clustered
+    selected_columns = st.sidebar.multiselect("Select columns to be clustered", data.columns)
+    
+    # Allow users to select preprocessing method
+    preprocessing_method = st.sidebar.radio("Select preprocessing method", ("Drop", "Imputation"))
+    
+    if preprocessing_method in ["Drop", "Imputation"]:
+        preprocessed_data = preprocess_data(data.copy(), selected_columns, preprocessing_method)
+        st.write(f"Preprocessed Data ({preprocessing_method} Method):")
+        st.write(preprocessed_data)
