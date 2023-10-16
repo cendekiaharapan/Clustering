@@ -72,19 +72,21 @@ if uploaded_file is not None:
     if data is not None:
         st.write("Input File:")
         st.write(data)
-        st.write(verification_result)
-        
-        st.sidebar.header("Data Preprocessing")
-        
-        # Allow users to select columns to be clustered
-        selected_columns = st.sidebar.multiselect("Select columns to be clustered", data.columns)
-        
-        # Allow users to select preprocessing method
-        preprocessing_method = st.sidebar.radio("Select preprocessing method", ("Drop", "Imputation"))
-        
-        if preprocessing_method in ["Drop", "Imputation"]:
-            preprocessed_data = preprocess_data(data.copy(), selected_columns, preprocessing_method)
-            st.write(f"Preprocessed Data ({preprocessing_method} Method):")
-            st.write(preprocessed_data)
+        if "meets the criteria" in verification_result:
+            st.success(verification_result)
+            st.sidebar.header("Data Preprocessing")
+            
+            # Allow users to select columns to be clustered
+            selected_columns = st.sidebar.multiselect("Select columns to be clustered", data.columns)
+            
+            # Allow users to select preprocessing method
+            preprocessing_method = st.sidebar.radio("Select preprocessing method", ("Drop", "Imputation"))
+            
+            if preprocessing_method in ["Drop", "Imputation"]:
+                preprocessed_data = preprocess_data(data.copy(), selected_columns, preprocessing_method)
+                st.write(f"Preprocessed Data ({preprocessing_method} Method):")
+                st.write(preprocessed_data)
+        else:
+            st.error(verification_result)
     else:
-        st.write(verification_result)
+        st.error(verification_result)
