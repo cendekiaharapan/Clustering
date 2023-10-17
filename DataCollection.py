@@ -10,13 +10,16 @@ def preprocess_data(data, selected_columns, preprocessing_method):
     elif preprocessing_method == "Imputation":
         for column in selected_columns:
             if pd.api.types.is_numeric_dtype(data[column]):
-                # Calculate the mode for numerical columns
-                mode_value = data[column].mode().values[0]
-                if pd.isna(mode_value):
+                # Check if the numerical column is continuous or categorical
+                if len(data[column].unique()) < 0.5 * len(data[column]):
+                    # Calculate the mode for categorical numerical columns
+                    mode_value = data[column].mode().values[0]
+                else:
+                    # Calculate the mean for continuous numerical columns
                     mode_value = data[column].mean()
                 data[column].fillna(mode_value, inplace=True)
             else:
-                # Impute with mode based on the most frequent value
+                # Impute with mode based on the most frequent value for non-numeric columns
                 mode_value = data[column].mode()[0]
                 data[column].fillna(mode_value, inplace=True)
     # Only keep selected columns in the preprocessed data
@@ -44,7 +47,7 @@ def verify_file(file):
         file_name = file.name
         if file_name.endswith('.csv'):
             try:
-                df = pd.read_csv(file)
+                df = pd.read_csv(file, encoding='latin1')
                 if df.empty or df.shape != df.dropna().shape:
                     return None, f"File '{file_name}' does not meet the criteria"
                 else:
