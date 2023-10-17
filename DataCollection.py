@@ -1,7 +1,10 @@
 import streamlit as st
 import pandas as pd
 import openpyxl
+import matplotlib.pyplot as plt
+import seaborn as sns
 from io import BytesIO
+import pandas.api.types as ptypes
 
 # Function to preprocess the data based on user selections
 def preprocess_data(data, selected_columns, preprocessing_method):
@@ -9,7 +12,7 @@ def preprocess_data(data, selected_columns, preprocessing_method):
         data = data.dropna(subset=selected_columns)
     elif preprocessing_method == "Imputation":
         for column in selected_columns:
-            if pd.api.types.is_numeric_dtype(data[column]):
+            if ptypes.is_numeric_dtype(data[column]):
                 # Check if the numerical column is continuous or categorical
                 if len(data[column].unique()) < 0.5 * len(data[column]):
                     # Calculate the mode for categorical numerical columns
@@ -47,8 +50,8 @@ def verify_file(file):
         file_name = file.name
         if file_name.endswith('.csv'):
             try:
-                df = pd.read_csv(file, encoding='latin1')
-                if df.empty or df.shape[0] < 2 or df.shape[1] < 2:
+                df = pd.read_csv(file)
+                if df.empty or df.shape != df.dropna().shape:
                     return None, f"File '{file_name}' does not meet the criteria"
                 else:
                     return df, f"File '{file_name}' meets the criteria"
@@ -59,11 +62,10 @@ def verify_file(file):
                 return None, f"File '{file_name}' does not meet the criteria"
             else:
                 df = pd.read_excel(file)
-                if df.empty or df.shape[0] < 2 or df.shape[1] < 2:
-                    return None, f"File '{file_name}' does not meet the criteria"
                 return df, f"File '{file_name}' meets the criteria"
     return None, "Please upload a file."
 
+st.set_option('deprecation.showPyplotGlobalUse', False)
 st.title("Clustering Peserta Didik Sekolah Cendekia Harapan")
 
 uploaded_file = st.file_uploader("Choose file CSV", type=["csv", "xls", "xlsx"])
@@ -91,6 +93,30 @@ if uploaded_file is not None:
                 preprocessed_data = preprocess_data(data.copy(), selected_columns, preprocessing_method)
                 st.write(f"Preprocessed Data ({preprocessing_method} Method):")
                 st.write(preprocessed_data)
+                
+                for column in selected_columns:
+                    if ptypes.is_numeric_dtype(preprocessed_data[column]):
+                        if len(preprocessed_data[column].unique()) < 0.5 * len(preprocessed_data[column]):
+                            plt.figure(figsize=(8, 6))
+                            sns.countplot(x=preprocessed_data[column])
+                            plt.title(f"Count plot for {column}")
+                            plt.xlabel(column)
+                            plt.ylabel("Count")
+                            st.pyplot()
+                        else:
+                            plt.figure(figsize=(8, 6))
+                            sns.histplot(data=preprocessed_data[column], kde=True)
+                            plt.title(f"Histogram for {column}")
+                            plt.xlabel(column)
+                            plt.ylabel("Frequency")
+                            st.pyplot()
+                    else:
+                        plt.figure(figsize=(8, 6))
+                        sns.countplot(x=preprocessed_data[column])
+                        plt.title(f"Count plot for {column}")
+                        plt.xlabel(column)
+                        plt.ylabel("Count")
+                        st.pyplot()
         else:
             st.error(verification_result)
     else:
