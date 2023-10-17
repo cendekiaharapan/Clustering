@@ -5,10 +5,35 @@ import numpy as np
 import matplotlib.pyplot as plt
 from hdbscan import HDBSCAN
 from sklearn.metrics import silhouette_samples
+<<<<<<< Updated upstream
 from sklearn.preprocessing import LabelEncoder
 from yellowbrick.cluster import KElbowVisualizer
 from kmodes.kprototypes import KPrototypes
    
+=======
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from yellowbrick.cluster import KElbowVisualizer
+from kmodes.kprototypes import KPrototypes
+
+      
+
+# def find_optimal_clusters(data, min_clusters, max_clusters):
+#     best_score = -1
+#     best_clusters = None
+
+#     for k in range(min_clusters, max_clusters + 1):
+#         clusterer = HDBSCAN(min_cluster_size=k, gen_min_span_tree=True)
+#         cluster_labels = clusterer.fit_predict(data)
+
+#         if len(set(cluster_labels)) > 1:
+#             silhouette_avg = silhouette_samples(data, cluster_labels).mean()
+#             if silhouette_avg > best_score:
+#                 best_score = silhouette_avg
+#                 best_clusters = k
+
+#     return best_clusters
+
+>>>>>>> Stashed changes
 # Function to preprocess the data based on user selections
 def preprocess_data(data, selected_columns, preprocessing_method):
     if preprocessing_method == "Drop":
@@ -82,7 +107,11 @@ if uploaded_file is not None:
 
     # Allow users to select preprocessing method
     preprocessing_method = st.sidebar.radio("Select preprocessing method", ("Drop", "Imputation"))
+<<<<<<< Updated upstream
 
+=======
+    st.sidebar.header("Clustering Method")
+>>>>>>> Stashed changes
     # Add radio button for manual or automatic clustering
     clustering_method = st.sidebar.radio("Select Clustering Method", ("Manual", "Automatic"))
 
@@ -91,8 +120,11 @@ if uploaded_file is not None:
         st.write(f"Preprocessed Data ({preprocessing_method} Method):")
         st.write(preprocessed_data)
 
+<<<<<<< Updated upstream
 
     # RADIO BUTTON MANUAL
+=======
+>>>>>>> Stashed changes
         if clustering_method == "Manual":
             # Add input field for the number of clusters
            num_clusters = st.sidebar.number_input("Enter the number of clusters:", min_value=2, value=2)
@@ -123,5 +155,52 @@ if uploaded_file is not None:
             # Display the clustered data
             st.write("Manual Clustering Result:")
             st.write(preprocessed_data)
+<<<<<<< Updated upstream
 
 
+=======
+      
+
+        if clustering_method == "Automatic":
+            if st.sidebar.button("Perform Automatic Clustering"):
+                # Select the relevant columns for clustering (numeric and categorical)
+                selected_data = preprocessed_data[selected_columns]
+
+                # Identify categorical columns
+                categorical_columns = selected_data.select_dtypes(include=['object']).columns
+                label_encoder = LabelEncoder()
+
+                # Label encoding for categorical columns
+                for column in categorical_columns:
+                    selected_data[column] = label_encoder.fit_transform(selected_data[column])
+
+                # Get the indices of categorical columns
+                categorical_indices = [selected_data.columns.get_loc(col) for col in categorical_columns]
+
+                # Create the KElbowVisualizer
+                visualizer = KElbowVisualizer(
+                    KPrototypes(n_clusters=(1, 11), init='Cao', n_init=1, verbose=2),
+                    k=(1, 11),
+                )
+
+                # Fit the visualizer with the data
+                visualizer.fit(selected_data, categorical=categorical_indices)
+
+                # Display the elbow method graph
+                visualizer.show()
+
+                # Get the optimal number of clusters
+                optimal_num_clusters = visualizer.elbow_value_
+
+                # Now, use the optimal_num_clusters for K-Prototypes clustering with random initialization
+                kprot = KPrototypes(n_clusters=optimal_num_clusters, init='Cao', n_init=1, verbose=2)
+                clusters = kprot.fit_predict(selected_data, categorical=categorical_indices)
+
+                # Add cluster labels to the preprocessed_data
+                preprocessed_data['Cluster'] = clusters
+
+                # Display the clustered data
+                st.write("Automatic Clustering Result:")
+                st.write("Optimal Number Of Cluster:", optimal_num_clusters)
+                st.write(preprocessed_data)
+>>>>>>> Stashed changes
