@@ -99,23 +99,16 @@ if uploaded_file is not None:
                         if len(preprocessed_data[column].unique()) < 0.5 * len(preprocessed_data[column]):
                             plt.figure(figsize=(8, 6))
                             sns.countplot(x=preprocessed_data[column])
-                            plt.title(f"Count plot for {column}")
-                            plt.xlabel(column)
-                            plt.ylabel("Count")
+                            plt.xticks(rotation=90)
                             st.pyplot()
                         else:
                             plt.figure(figsize=(8, 6))
                             sns.histplot(data=preprocessed_data[column], kde=True)
-                            plt.title(f"Histogram for {column}")
-                            plt.xlabel(column)
-                            plt.ylabel("Frequency")
                             st.pyplot()
                     else:
                         plt.figure(figsize=(8, 6))
                         sns.countplot(x=preprocessed_data[column])
-                        plt.title(f"Count plot for {column}")
-                        plt.xlabel(column)
-                        plt.ylabel("Count")
+                        plt.xticks(rotation=90)
                         st.pyplot()
         else:
             st.error(verification_result)
