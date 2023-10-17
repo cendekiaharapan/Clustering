@@ -48,7 +48,7 @@ def verify_file(file):
         if file_name.endswith('.csv'):
             try:
                 df = pd.read_csv(file, encoding='latin1')
-                if df.empty or df.shape != df.dropna().shape:
+                if df.empty or df.shape[0] < 2 or df.shape[1] < 2:
                     return None, f"File '{file_name}' does not meet the criteria"
                 else:
                     return df, f"File '{file_name}' meets the criteria"
@@ -59,6 +59,8 @@ def verify_file(file):
                 return None, f"File '{file_name}' does not meet the criteria"
             else:
                 df = pd.read_excel(file)
+                if df.empty or df.shape[0] < 2 or df.shape[1] < 2:
+                    return None, f"File '{file_name}' does not meet the criteria"
                 return df, f"File '{file_name}' meets the criteria"
     return None, "Please upload a file."
 
