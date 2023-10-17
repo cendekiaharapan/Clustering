@@ -9,15 +9,15 @@ def preprocess_data(data, selected_columns, preprocessing_method):
         data = data.dropna(subset=selected_columns)
     elif preprocessing_method == "Imputation":
         for column in selected_columns:
-            if data[column].dtype == 'object':
-                # Impute with mode based on the most frequent value
-                mode_value = data[column].mode()[0]
-                data[column].fillna(mode_value, inplace=True)
-            elif data[column].dtype == 'float64':
+            if pd.api.types.is_numeric_dtype(data[column]):
                 # Calculate the mode for numerical columns
                 mode_value = data[column].mode().values[0]
                 if pd.isna(mode_value):
                     mode_value = data[column].mean()
+                data[column].fillna(mode_value, inplace=True)
+            else:
+                # Impute with mode based on the most frequent value
+                mode_value = data[column].mode()[0]
                 data[column].fillna(mode_value, inplace=True)
     # Only keep selected columns in the preprocessed data
     data = data[selected_columns]
