@@ -1,11 +1,37 @@
 import streamlit as st
 import pandas as pd
 import openpyxl
+from io import BytesIO
 
-# Fungsi untuk memeriksa apakah file Excel memiliki sel yang digabung (merged)
-def is_excel_merged(file_path):
+# Function to preprocess the data based on user selections
+def preprocess_data(data, selected_columns, preprocessing_method):
+    if preprocessing_method == "Drop":
+        data = data.dropna(subset=selected_columns)
+    elif preprocessing_method == "Imputation":
+        for column in selected_columns:
+            if pd.api.types.is_numeric_dtype(data[column]):
+                # Check if the numerical column is continuous or categorical
+                if len(data[column].unique()) < 0.5 * len(data[column]):
+                    # Calculate the mode for categorical numerical columns
+                    mode_value = data[column].mode().values[0]
+                else:
+                    # Calculate the mean for continuous numerical columns
+                    mode_value = data[column].mean()
+                data[column].fillna(mode_value, inplace=True)
+            else:
+                # Impute with mode based on the most frequent value for non-numeric columns
+                mode_value = data[column].mode()[0]
+                data[column].fillna(mode_value, inplace=True)
+    # Only keep selected columns in the preprocessed data
+    data = data[selected_columns]
+    return data
+
+# Function to check if the Excel file has merged cells
+def is_excel_merged(file):
     try:
-        workbook = openpyxl.load_workbook(file_path, read_only=True)
+        file.seek(0)
+        content = BytesIO(file.read())
+        workbook = openpyxl.load_workbook(content, read_only=True)
         for sheet_name in workbook.sheetnames:
             sheet = workbook[sheet_name]
             for merged_cells in sheet.merged_cells.ranges:
@@ -13,33 +39,59 @@ def is_excel_merged(file_path):
                     return True
         return False
     except Exception as e:
-        return True  # Anggap saja terdapat error, sehingga munculkan pesan "file tidak memenuhi kriteria"
+        return True  # Assume an error, and show the message "File does not meet the criteria"
 
-# Fungsi untuk memeriksa apakah file CSV atau Excel memenuhi kriteria
+# Function to check if the uploaded file meets the criteria
 def verify_file(file):
     if file is not None:
         file_name = file.name
         if file_name.endswith('.csv'):
-            df = pd.read_csv(file)
-            if df.empty or df.shape != df.dropna().shape:
-                return f"File '{file_name}' does not meet the criteria"
-            else:
-                return f"File '{file_name}' meets the criteria"
+            try:
+                df = pd.read_csv(file, encoding='latin1')
+                if df.shape[0] < 2 or df.shape[1] < 2:
+                    return df, f"File '{file_name}' meets the criteria"
+                else:
+                    return df, f"File '{file_name}' meets the criteria"
+            except Exception as e:
+                return None, f"Error: {e}"
         elif file_name.endswith(('.xls', '.xlsx')):
             if is_excel_merged(file):
-                return f"File '{file_name}' does not meet the criteria"
+                return None, f"File '{file_name}' does not meet the criteria"
             else:
-                return f"File '{file_name}' meets the criteria"
-    return "Please upload a file."
+                df = pd.read_excel(file)
+                if df.empty or df.shape[0] < 2 or df.shape[1] < 2:
+                    return None, f"File '{file_name}' does not meet the criteria"
+                return df, f"File '{file_name}' meets the criteria"
+    return None, "Please upload a file."
 
-# Halaman Streamlit
-st.title("Clustering App")
+st.title("Clustering Peserta Didik Sekolah Cendekia Harapan")
 
-uploaded_file = st.file_uploader("Upload a CSV or Excel File:", type=["csv", "xls", "xlsx"])
+uploaded_file = st.file_uploader("Choose file CSV", type=["csv", "xls", "xlsx"])
 
 if uploaded_file is not None:
-    message = verify_file(uploaded_file)
-    if "meets the criteria" in message:
-        st.success(message)
+    st.write("Uploaded Files:")
+    st.write(uploaded_file.name)
+
+    data, verification_result = verify_file(uploaded_file)
+
+    if data is not None:
+        st.write("Input File:")
+        st.write(data)
+        if "meets the criteria" in verification_result:
+            st.success(verification_result)
+            st.sidebar.header("Data Preprocessing")
+
+            # Allow users to select columns to be clustered
+            selected_columns = st.sidebar.multiselect("Select columns to be clustered", data.columns)
+
+            # Allow users to select preprocessing method
+            preprocessing_method = st.sidebar.radio("Select preprocessing method", ("Drop", "Imputation"))
+
+            if preprocessing_method in ["Drop", "Imputation"]:
+                preprocessed_data = preprocess_data(data.copy(), selected_columns, preprocessing_method)
+                st.write(f"Preprocessed Data ({preprocessing_method} Method):")
+                st.write(preprocessed_data)
+        else:
+            st.error(verification_result)
     else:
-        st.error(message)
+        st.error(verification_result)
