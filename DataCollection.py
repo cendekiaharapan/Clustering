@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
 import openpyxl
+from io import BytesIO
 import matplotlib.pyplot as plt
 import seaborn as sns
-from io import BytesIO
 import pandas.api.types as ptypes
 
 # Function to preprocess the data based on user selections
@@ -12,7 +12,7 @@ def preprocess_data(data, selected_columns, preprocessing_method):
         data = data.dropna(subset=selected_columns)
     elif preprocessing_method == "Imputation":
         for column in selected_columns:
-            if ptypes.is_numeric_dtype(data[column]):
+            if pd.api.types.is_numeric_dtype(data[column]):
                 # Check if the numerical column is continuous or categorical
                 if len(data[column].unique()) < 0.5 * len(data[column]):
                     # Calculate the mode for categorical numerical columns
@@ -50,9 +50,9 @@ def verify_file(file):
         file_name = file.name
         if file_name.endswith('.csv'):
             try:
-                df = pd.read_csv(file)
-                if df.empty or df.shape != df.dropna().shape:
-                    return None, f"File '{file_name}' does not meet the criteria"
+                df = pd.read_csv(file, encoding='latin1')
+                if df.shape[0] < 2 or df.shape[1] < 2:
+                    return df, f"File '{file_name}' meets the criteria"
                 else:
                     return df, f"File '{file_name}' meets the criteria"
             except Exception as e:
@@ -62,6 +62,8 @@ def verify_file(file):
                 return None, f"File '{file_name}' does not meet the criteria"
             else:
                 df = pd.read_excel(file)
+                if df.empty or df.shape[0] < 2 or df.shape[1] < 2:
+                    return None, f"File '{file_name}' does not meet the criteria"
                 return df, f"File '{file_name}' meets the criteria"
     return None, "Please upload a file."
 
@@ -73,43 +75,62 @@ uploaded_file = st.file_uploader("Choose file CSV", type=["csv", "xls", "xlsx"])
 if uploaded_file is not None:
     st.write("Uploaded Files:")
     st.write(uploaded_file.name)
-    
+
     data, verification_result = verify_file(uploaded_file)
-    
+
     if data is not None:
         st.write("Input File:")
         st.write(data)
         if "meets the criteria" in verification_result:
             st.success(verification_result)
             st.sidebar.header("Data Preprocessing")
-            
-            # Allow users to select columns to be clustered
+
             selected_columns = st.sidebar.multiselect("Select columns to be clustered", data.columns)
-            
-            # Allow users to select preprocessing method
+
             preprocessing_method = st.sidebar.radio("Select preprocessing method", ("Drop", "Imputation"))
-            
+
             if preprocessing_method in ["Drop", "Imputation"]:
                 preprocessed_data = preprocess_data(data.copy(), selected_columns, preprocessing_method)
                 st.write(f"Preprocessed Data ({preprocessing_method} Method):")
                 st.write(preprocessed_data)
-                
+
                 for column in selected_columns:
-                    if ptypes.is_numeric_dtype(preprocessed_data[column]):
+                    unique_values = preprocessed_data[column].unique()
+                    if len(unique_values) == 1:
+                        st.success(f"Only one category (value) in column {column}: {unique_values[0]}: {len(preprocessed_data[column])}")
+                    elif ptypes.is_numeric_dtype(preprocessed_data[column]):
                         if len(preprocessed_data[column].unique()) < 0.5 * len(preprocessed_data[column]):
-                            plt.figure(figsize=(8, 6))
-                            sns.countplot(x=preprocessed_data[column])
-                            plt.xticks(rotation=90)
-                            st.pyplot()
+                            if len(preprocessed_data[column].unique()) > 5:
+                                if len(preprocessed_data[column].unique()) < 20:
+                                    plt.figure(figsize=(8, 6))
+                                    sns.countplot(y=preprocessed_data[column])
+                                    plt.xticks(rotation=0)
+                                    st.pyplot()
+                                else:
+                                    st.error(f"Skipping visualization for column {column} due to too many unique values.")
+                            else:
+                                plt.figure(figsize=(8, 6))
+                                sns.countplot(x=preprocessed_data[column])
+                                plt.xticks(rotation=0)
+                                st.pyplot()
                         else:
                             plt.figure(figsize=(8, 6))
                             sns.histplot(data=preprocessed_data[column], kde=True)
                             st.pyplot()
                     else:
-                        plt.figure(figsize=(8, 6))
-                        sns.countplot(x=preprocessed_data[column])
-                        plt.xticks(rotation=90)
-                        st.pyplot()
+                        if len(preprocessed_data[column].unique()) > 5:
+                            if len(preprocessed_data[column].unique()) < 20:
+                                plt.figure(figsize=(8, 6))
+                                sns.countplot(y=preprocessed_data[column])
+                                plt.xticks(rotation=0)
+                                st.pyplot()
+                            else:
+                                st.error(f"Skipping visualization for column {column} due to too many unique values.")
+                        else:
+                            plt.figure(figsize=(8, 6))
+                            sns.countplot(x=preprocessed_data[column])
+                            plt.xticks(rotation=0)
+                            st.pyplot()
         else:
             st.error(verification_result)
     else:
