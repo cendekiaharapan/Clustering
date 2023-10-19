@@ -1,39 +1,17 @@
 import streamlit as st
 import pandas as pd
 import openpyxl
+from io import BytesIO
 import numpy as np
 import matplotlib.pyplot as plt
 from hdbscan import HDBSCAN
 from sklearn.metrics import silhouette_samples
-<<<<<<< Updated upstream
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler, OneHotEncoder
 from yellowbrick.cluster import KElbowVisualizer
 from kmodes.kprototypes import KPrototypes
-   
-=======
-from sklearn.preprocessing import LabelEncoder, StandardScaler
-from yellowbrick.cluster import KElbowVisualizer
-from kmodes.kprototypes import KPrototypes
+from kmodes.kmodes import KModes
+from sklearn.cluster import KMeans
 
-      
-
-# def find_optimal_clusters(data, min_clusters, max_clusters):
-#     best_score = -1
-#     best_clusters = None
-
-#     for k in range(min_clusters, max_clusters + 1):
-#         clusterer = HDBSCAN(min_cluster_size=k, gen_min_span_tree=True)
-#         cluster_labels = clusterer.fit_predict(data)
-
-#         if len(set(cluster_labels)) > 1:
-#             silhouette_avg = silhouette_samples(data, cluster_labels).mean()
-#             if silhouette_avg > best_score:
-#                 best_score = silhouette_avg
-#                 best_clusters = k
-
-#     return best_clusters
-
->>>>>>> Stashed changes
 # Function to preprocess the data based on user selections
 def preprocess_data(data, selected_columns, preprocessing_method):
     if preprocessing_method == "Drop":
@@ -54,7 +32,7 @@ def preprocess_data(data, selected_columns, preprocessing_method):
     data = data[selected_columns]
     return data
 
-# Function to check if the Excel file has merged cells
+# Fungsi untuk memeriksa apakah file Excel memiliki sel yang digabung (merged)
 def is_excel_merged(file_path):
     try:
         workbook = openpyxl.load_workbook(file_path, read_only=True)
@@ -65,9 +43,9 @@ def is_excel_merged(file_path):
                     return True
         return False
     except Exception as e:
-        return True
+        return True  # Anggap saja terdapat error, sehingga munculkan pesan "file tidak memenuhi kriteria"
 
-# Function to verify if the file meets the criteria
+# Fungsi untuk memeriksa apakah file CSV atau Excel memenuhi kriteria
 def verify_file(file):
     if file is not None:
         file_name = file.name
@@ -86,121 +64,262 @@ def verify_file(file):
 
 st.title("Clustering Peserta Didik Sekolah Cendekia Harapan")
 
-uploaded_file = st.file_uploader("Choose file CSV or Excel", type=["csv", "xls", "xlsx"])
+uploaded_file = st.file_uploader("Choose file CSV", type=["csv", "xls", "xlsx"])
 
 if uploaded_file is not None:
     st.write("Uploaded Files:")
     st.write(uploaded_file.name)
-
-    if uploaded_file.name.endswith('.csv'):
-        data = pd.read_csv(uploaded_file)
-    else:
-        data = pd.read_excel(uploaded_file)
-
+    
+    data = pd.read_csv(uploaded_file)
+    
     st.write("Input File:")
     st.write(data)
-
+    
     st.sidebar.header("Data Preprocessing")
-
+    
     # Allow users to select columns to be clustered
     selected_columns = st.sidebar.multiselect("Select columns to be clustered", data.columns)
-
+    
     # Allow users to select preprocessing method
     preprocessing_method = st.sidebar.radio("Select preprocessing method", ("Drop", "Imputation"))
-<<<<<<< Updated upstream
-
-=======
+    
     st.sidebar.header("Clustering Method")
->>>>>>> Stashed changes
     # Add radio button for manual or automatic clustering
     clustering_method = st.sidebar.radio("Select Clustering Method", ("Manual", "Automatic"))
-
+    
     if preprocessing_method in ["Drop", "Imputation"]:
         preprocessed_data = preprocess_data(data.copy(), selected_columns, preprocessing_method)
         st.write(f"Preprocessed Data ({preprocessing_method} Method):")
         st.write(preprocessed_data)
 
-<<<<<<< Updated upstream
+    if clustering_method == "Manual":
+        num_clusters = st.sidebar.number_input("Enter the number of clusters:", min_value=2, value=2)
 
-    # RADIO BUTTON MANUAL
-=======
->>>>>>> Stashed changes
-        if clustering_method == "Manual":
-            # Add input field for the number of clusters
-           num_clusters = st.sidebar.number_input("Enter the number of clusters:", min_value=2, value=2)
-           if st.sidebar.button("Perform Manual Clustering"):
+
+        if st.sidebar.button("Perform Manual Clustering"):
             # Select the relevant columns for clustering (numeric and categorical)
             selected_data = preprocessed_data[selected_columns]
-            
-            # Identify categorical columns
+
+            # Identify categorical and continuous columns
             categorical_columns = selected_data.select_dtypes(include=['object']).columns
-            label_encoder = LabelEncoder()
+            continuous_columns = selected_data.select_dtypes(exclude=['object']).columns
 
-            # Label encoding for categorical columns
-            for column in categorical_columns:
-                selected_data[column] = label_encoder.fit_transform(selected_data[column])
+            if len(continuous_columns) == 0:
+                st.info("Performing Manual Clustering Using K-Modes Algorithm... (This may take a moment)")
+                # If there are no continuous columns, perform K-Modes clustering
+                # Apply one-hot encoding to categorical columns
+                selected_data = pd.get_dummies(selected_data, columns=categorical_columns)
+                
+                # Create a K-Modes model
+                kmodes = KModes(n_clusters=num_clusters, init='Cao', n_init=1, verbose=2)
 
-            # Get the indices of categorical columns
-            categorical_indices = [selected_data.columns.get_loc(col) for col in categorical_columns]
-
-            # Create a K-Prototypes model
-            kprot = KPrototypes(n_clusters=num_clusters, init='Cao', n_init=1, verbose=2)
-
-            # Fit the model to the data
-            clusters = kprot.fit_predict(selected_data, categorical=categorical_indices)
-
-            # Add cluster labels to the preprocessed data
-            preprocessed_data['Cluster'] = clusters
-
-            # Display the clustered data
-            st.write("Manual Clustering Result:")
-            st.write(preprocessed_data)
-<<<<<<< Updated upstream
-
-
-=======
-      
-
-        if clustering_method == "Automatic":
-            if st.sidebar.button("Perform Automatic Clustering"):
-                # Select the relevant columns for clustering (numeric and categorical)
-                selected_data = preprocessed_data[selected_columns]
-
-                # Identify categorical columns
-                categorical_columns = selected_data.select_dtypes(include=['object']).columns
-                label_encoder = LabelEncoder()
-
-                # Label encoding for categorical columns
-                for column in categorical_columns:
-                    selected_data[column] = label_encoder.fit_transform(selected_data[column])
-
-                # Get the indices of categorical columns
-                categorical_indices = [selected_data.columns.get_loc(col) for col in categorical_columns]
-
-                # Create the KElbowVisualizer
-                visualizer = KElbowVisualizer(
-                    KPrototypes(n_clusters=(1, 11), init='Cao', n_init=1, verbose=2),
-                    k=(1, 11),
-                )
-
-                # Fit the visualizer with the data
-                visualizer.fit(selected_data, categorical=categorical_indices)
-
-                # Display the elbow method graph
-                visualizer.show()
-
-                # Get the optimal number of clusters
-                optimal_num_clusters = visualizer.elbow_value_
-
-                # Now, use the optimal_num_clusters for K-Prototypes clustering with random initialization
-                kprot = KPrototypes(n_clusters=optimal_num_clusters, init='Cao', n_init=1, verbose=2)
-                clusters = kprot.fit_predict(selected_data, categorical=categorical_indices)
+                # Fit the model to the data
+                clusters = kmodes.fit_predict(selected_data)
 
                 # Add cluster labels to the preprocessed_data
                 preprocessed_data['Cluster'] = clusters
 
                 # Display the clustered data
-                st.write("Automatic Clustering Result:")
-                st.write("Optimal Number Of Cluster:", optimal_num_clusters)
+                st.write("Manual Clustering Result:")
+                st.write(f"Number of clusters : {num_clusters}")
                 st.write(preprocessed_data)
->>>>>>> Stashed changes
+                st.success("Manual Clustering completed!")
+
+            elif len(categorical_columns) == 0:
+                st.info("Performing Manual Clustering Using K-Means Algorithm... (This may take a moment)")
+                # If there are no categorical columns, perform K-Means clustering
+                # Standardize the continuous columns
+                scaler = StandardScaler()
+                selected_data[continuous_columns] = scaler.fit_transform(selected_data[continuous_columns])
+                
+                # Create a K-Means model
+                kmeans = KMeans(n_clusters=num_clusters, init='k-means++', n_init=10, random_state=0, verbose=2)
+
+                # Fit the model to the data
+                clusters = kmeans.fit_predict(selected_data[continuous_columns])
+
+                # Add cluster labels to the preprocessed_data
+                preprocessed_data['Cluster'] = clusters
+
+                # Display the clustered data
+                st.write("Manual Clustering Result:")
+                st.write(f"Number of clusters : {num_clusters}")
+                st.write(preprocessed_data)
+                st.success("Manual Clustering completed!")
+
+            else:
+                st.info("Performing Manual Clustering Using K-Prototypes Algorithm... (This may take a moment)")
+                # If there are both categorical and continuous columns, perform K-Prototypes clustering
+                # Apply one-hot encoding to categorical columns
+                selected_data = pd.get_dummies(selected_data, columns=categorical_columns)
+                
+                # Standardize the continuous columns
+                scaler = StandardScaler()
+                selected_data[continuous_columns] = scaler.fit_transform(selected_data[continuous_columns])
+                
+                # Create a K-Prototypes model
+                try :
+                    kprot = KPrototypes(n_clusters=num_clusters, init='Cao', n_init=1, verbose=2)
+                    # Fit the model to the data
+                    clusters = kprot.fit_predict(selected_data, categorical=list(range(len(categorical_columns))))
+                    # Add cluster labels to the preprocessed_data
+                    preprocessed_data['Cluster'] = clusters
+                    # Display the clustered data
+                    st.write("Manual Clustering Result:")
+                    st.write(f"Number of clusters : {num_clusters}")
+                    st.write(preprocessed_data)
+                    st.success("Manual Clustering completed!")
+                    
+                except: 
+                    st.error(f"Cannot perfom cluster in {num_clusters} clusters, Please try another amount of clusters")
+            
+
+         
+
+
+    if clustering_method == "Automatic":
+        if st.sidebar.button("Perform Automatic Clustering"):
+            # Select the relevant columns for clustering (numeric and categorical)
+            selected_data = preprocessed_data[selected_columns]
+
+            # Identify categorical columns
+            categorical_columns = selected_data.select_dtypes(include=['object']).columns
+            continuous_columns = selected_data.select_dtypes(exclude=['object']).columns
+
+            if len(continuous_columns) == 0:
+                st.info("Performing Automatic Clustering Using K-Modes Algorithm... (This may take a moment)")
+                selected_data = pd.get_dummies(selected_data, columns=categorical_columns)
+                
+                fig, ax = plt.subplots()
+
+                for k in range(11, 3, -1):
+                    try:
+                        # Create the KElbowVisualizer for K-Modes
+                        visualizer = KElbowVisualizer(
+                            KModes(n_clusters=k, init='Cao', n_init=1, verbose=2),
+                            k=(2, k)
+                        )
+                        # Fit the visualizer with the data
+                        visualizer.fit(selected_data)
+                    except:
+                        print(f"Failed To Cluster For {k}")
+                        continue
+                    break
+
+                # Display the elbow method graph using st.pyplot(fig)
+                st.pyplot(fig)
+
+                # Get the optimal number of clusters
+                optimal_num_clusters = visualizer.elbow_value_
+
+                if optimal_num_clusters is not None:
+                    # Now, use the optimal_num_clusters for K-Modes clustering
+                    kmodes = KModes(n_clusters=optimal_num_clusters, init='Cao', n_init=1, verbose=2)
+                    clusters = kmodes.fit_predict(selected_data)
+
+                    # Add cluster labels to the preprocessed_data
+                    preprocessed_data['Cluster'] = clusters
+
+                    # Display the clustered data
+                    st.write("Automatic Clustering Result:")
+                    st.write("Optimal Number Of Cluster:", optimal_num_clusters)
+                    st.write(preprocessed_data)
+                    st.success("Automatic Clustering completed!")
+                else:
+                    st.error("No Optimal Clusters Found, Please Retry")
+                
+            elif len(categorical_columns) == 0:
+                st.info("Performing Automatic Clustering Using K-Means Algorithm... (This may take a moment)")
+                # If there are no categorical columns, perform K-Means clustering
+                # Standardize the continuous columns
+                scaler = StandardScaler()
+                selected_data[continuous_columns] = scaler.fit_transform(selected_data[continuous_columns])
+                
+                fig, ax = plt.subplots()
+
+                for k in range(11, 3, -1):
+                    try:
+                        # Create the KElbowVisualizer for K-Means
+                        visualizer = KElbowVisualizer(
+                            KMeans(n_clusters=k, init='k-means++', n_init=10, random_state=0, verbose=2),
+                            k=(2, k)
+                        )
+                        # Fit the visualizer with the data
+                        visualizer.fit(selected_data)
+                    except:
+                        print(f"Failed To Cluster For {k}")
+                        continue
+                    break
+
+                # Display the elbow method graph using st.pyplot(fig)
+                st.pyplot(fig)
+
+                # Get the optimal number of clusters
+                optimal_num_clusters = visualizer.elbow_value_
+                if optimal_num_clusters is not None:
+                    # Create a K-Means model
+                    kmeans = KMeans(n_clusters=optimal_num_clusters, init='k-means++', n_init=10, random_state=0, verbose=2)
+                    # Fit the model to the data
+                    clusters = kmeans.fit_predict(selected_data[continuous_columns])
+
+                    # Add cluster labels to the preprocessed_data
+                    preprocessed_data['Cluster'] = clusters
+
+                    # Display the clustered data
+                    st.write("Automatic Clustering Result:")
+                    st.write("Optimal Number Of Cluster:", optimal_num_clusters)
+                    st.write(preprocessed_data)
+                    st.success("Automatic Clustering completed!")
+                else:
+                    st.error("No Optimal Clusters Found, Please Retry")
+            else :        
+                st.info("Performing Automatic Clustering Using K-Prototypes Algorithm... (This may take a moment)")
+                # Apply one-hot encoding to categorical columns
+                selected_data = pd.get_dummies(selected_data, columns=categorical_columns)
+                
+                # Scale the continuous columns
+                scaler = StandardScaler()
+                selected_data[continuous_columns] = scaler.fit_transform(selected_data[continuous_columns])
+                # Create a Matplotlib figure and axis
+                fig, ax = plt.subplots()
+
+                for k in range (11,3,-1) :
+                        try :
+                            # Create the KElbowVisualizer
+                            visualizer = KElbowVisualizer(
+                                KPrototypes( init='Cao', n_init=1, verbose=2),
+                                k=(2, k),
+                            )
+                            # Fit the visualizer with the data
+                            visualizer.fit(selected_data, categorical=list(range(len(categorical_columns))))
+                        except :
+                            print(f"Failed To Cluster For {k}")
+                            continue
+                        break
+                
+
+                # Display the elbow method graph using st.pyplot(fig)
+                st.pyplot(fig)
+
+                # Get the optimal number of clusters
+                
+                optimal_num_clusters = visualizer.elbow_value_
+                if optimal_num_clusters is None :
+                    st.error("No Optimal Clusters Found, Please Retry")
+                else :
+                    # Now, use the optimal_num_clusters for K-Prototypes clustering with random initialization
+                    kprot = KPrototypes(n_clusters=optimal_num_clusters, init='Cao', n_init=1, verbose=2)
+                    clusters = kprot.fit_predict(selected_data, categorical=list(range(len(categorical_columns))))
+
+                    # Add cluster labels to the preprocessed_data
+                    preprocessed_data['Cluster'] = clusters
+
+                    # Display the clustered data
+                    
+                    
+                    st.write("Automatic Clustering Result:")
+                    st.write("Optimal Number Of Cluster:", optimal_num_clusters)
+                    st.write(preprocessed_data)
+                    st.success("Automatic Clustering completed!")
+
+                
