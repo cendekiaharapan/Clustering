@@ -2,9 +2,8 @@ import streamlit as st
 import pandas as pd
 import openpyxl
 from io import BytesIO
+import numpy as np
 import matplotlib.pyplot as plt
-<<<<<<< Updated upstream
-=======
 from hdbscan import HDBSCAN
 from sklearn.metrics import silhouette_samples
 from sklearn.preprocessing import LabelEncoder, StandardScaler, OneHotEncoder
@@ -17,7 +16,6 @@ import streamlit as st
 import pandas as pd
 import openpyxl
 import matplotlib.pyplot as plt
->>>>>>> Stashed changes
 import seaborn as sns
 import pandas.api.types as ptypes
 
@@ -27,29 +25,24 @@ def preprocess_data(data, selected_columns, preprocessing_method):
         data = data.dropna(subset=selected_columns)
     elif preprocessing_method == "Imputation":
         for column in selected_columns:
-            if pd.api.types.is_numeric_dtype(data[column]):
-                # Check if the numerical column is continuous or categorical
-                if len(data[column].unique()) < 0.5 * len(data[column]):
-                    # Calculate the mode for categorical numerical columns
-                    mode_value = data[column].mode().values[0]
-                else:
-                    # Calculate the mean for continuous numerical columns
-                    mode_value = data[column].mean()
-                data[column].fillna(mode_value, inplace=True)
-            else:
-                # Impute with mode based on the most frequent value for non-numeric columns
+            if data[column].dtype == 'object':
+                # Impute with mode based on the most frequent value
                 mode_value = data[column].mode()[0]
+                data[column].fillna(mode_value, inplace=True)
+            elif data[column].dtype == 'float64':
+                # Calculate the mode for numerical columns
+                mode_value = data[column].mode().values[0]
+                if not pd.notna(mode_value):
+                    mode_value = data[column].mean()
                 data[column].fillna(mode_value, inplace=True)
     # Only keep selected columns in the preprocessed data
     data = data[selected_columns]
     return data
 
-# Function to check if the Excel file has merged cells
-def is_excel_merged(file):
+# Fungsi untuk memeriksa apakah file Excel memiliki sel yang digabung (merged)
+def is_excel_merged(file_path):
     try:
-        file.seek(0)
-        content = BytesIO(file.read())
-        workbook = openpyxl.load_workbook(content, read_only=True)
+        workbook = openpyxl.load_workbook(file_path, read_only=True)
         for sheet_name in workbook.sheetnames:
             sheet = workbook[sheet_name]
             for merged_cells in sheet.merged_cells.ranges:
@@ -57,101 +50,88 @@ def is_excel_merged(file):
                     return True
         return False
     except Exception as e:
-        return True  # Assume an error, and show the message "File does not meet the criteria"
+        return True  # Anggap saja terdapat error, sehingga munculkan pesan "file tidak memenuhi kriteria"
 
-# Function to check if the uploaded file meets the criteria
+# Fungsi untuk memeriksa apakah file CSV atau Excel memenuhi kriteria
 def verify_file(file):
     if file is not None:
         file_name = file.name
         if file_name.endswith('.csv'):
-            try:
-                df = pd.read_csv(file, encoding='latin1')
-                if df.shape[0] < 2 or df.shape[1] < 2:
-                    return df, f"File '{file_name}' meets the criteria"
-                else:
-                    return df, f"File '{file_name}' meets the criteria"
-            except Exception as e:
-                return None, f"Error: {e}"
+            df = pd.read_csv(file)
+            if df.empty or df.shape != df.dropna().shape:
+                return f"File '{file_name}' does not meet the criteria"
+            else:
+                return f"File '{file_name}' meets the criteria"
         elif file_name.endswith(('.xls', '.xlsx')):
             if is_excel_merged(file):
-                return None, f"File '{file_name}' does not meet the criteria"
+                return f"File '{file_name}' does not meet the criteria"
             else:
-                df = pd.read_excel(file)
-                if df.empty or df.shape[0] < 2 or df.shape[1] < 2:
-                    return None, f"File '{file_name}' does not meet the criteria"
-                return df, f"File '{file_name}' meets the criteria"
-    return None, "Please upload a file."
+                return f"File '{file_name}' meets the criteria"
+    return "Please upload a file."
 
-st.set_option('deprecation.showPyplotGlobalUse', False)
-st.title("Clustering Peserta Didik Sekolah Cendekia Harapan")
+st.title("Clustering App")
 
-uploaded_file = st.file_uploader("Choose file CSV", type=["csv", "xls", "xlsx"])
-
+uploaded_file = st.file_uploader("Upload a CSV or Excel File:", type=["csv", "xls", "xlsx"])
+categorical_columns = None  # Inisialisasi variabel categorical_columns
+selected_columns = None  # Inisialisasi variabel selected_columns   
+continuous_columns = None
 if uploaded_file is not None:
     st.write("Uploaded Files:")
     st.write(uploaded_file.name)
+    
+    data = pd.read_csv(uploaded_file)
+    
+    st.write("Input File:")
+    st.write(data)
+    st.sidebar.header("Data Preprocessing")
+    
+    # Allow users to select columns to be clustered
+    selected_columns = st.sidebar.multiselect("Select columns to be clustered", data.columns)
+    
+    # Allow users to select preprocessing method
+    preprocessing_method = st.sidebar.radio("Select preprocessing method", ("Drop", "Imputation"))
+    
+    st.sidebar.header("Clustering Method")
+    # Add radio button for manual or automatic clustering
+    clustering_method = st.sidebar.radio("Select Clustering Method", ("Manual", "Automatic"))
+    
+    if preprocessing_method in ["Drop", "Imputation"]:
+        preprocessed_data = preprocess_data(data.copy(), selected_columns, preprocessing_method)
+        st.write(f"Preprocessed Data ({preprocessing_method} Method):")
+        st.write(preprocessed_data)
 
-    data, verification_result = verify_file(uploaded_file)
+    if clustering_method == "Manual":
+        num_clusters = st.sidebar.number_input("Enter the number of clusters:", min_value=2, value=2)
 
-    if data is not None:
-        st.write("Input File:")
-        st.write(data)
-        if "meets the criteria" in verification_result:
-            st.success(verification_result)
-            st.sidebar.header("Data Preprocessing")
+        if st.sidebar.button("Perform Manual Clustering"):
+            # Select the relevant columns for clustering (numeric and categorical)
+            selected_data = preprocessed_data[selected_columns]
 
-            selected_columns = st.sidebar.multiselect("Select columns to be clustered", data.columns)
+            # Identify categorical and continuous columns
+            categorical_columns = selected_data.select_dtypes(include=['object']).columns
+            continuous_columns = selected_data.select_dtypes(exclude=['object']).columns
 
-            preprocessing_method = st.sidebar.radio("Select preprocessing method", ("Drop", "Imputation"))
+            if len(continuous_columns) == 0:
+                st.info("Performing Manual Clustering Using K-Modes Algorithm... (This may take a moment)")
+                # If there are no continuous columns, perform K-Modes clustering
+                # Apply one-hot encoding to categorical columns
+                selected_data = pd.get_dummies(selected_data, columns=categorical_columns)
+                
+                # Create a K-Modes model
+                kmodes = KModes(n_clusters=num_clusters, init='Cao', n_init=1, verbose=2)
 
-            if preprocessing_method in ["Drop", "Imputation"]:
-                preprocessed_data = preprocess_data(data.copy(), selected_columns, preprocessing_method)
-                st.write(f"Preprocessed Data ({preprocessing_method} Method):")
+                # Fit the model to the data
+                clusters = kmodes.fit_predict(selected_data)
+
+                st.session_state.model = kmodes
+
+                # Add cluster labels to the preprocessed_data
+                preprocessed_data['Cluster'] = clusters
+
+                # Display the clustered data
+                st.write("Manual Clustering Result:")
+                st.write(f"Number of clusters : {num_clusters}")
                 st.write(preprocessed_data)
-<<<<<<< Updated upstream
-
-                for column in selected_columns:
-                    unique_values = preprocessed_data[column].unique()
-                    if len(unique_values) == 1:
-                        st.success(f"Only one category (value) in column {column}: {unique_values[0]}, and the number of it's number is: {len(preprocessed_data[column])}")
-                    elif ptypes.is_numeric_dtype(preprocessed_data[column]):
-                        if len(preprocessed_data[column].unique()) < 0.5 * len(preprocessed_data[column]):
-                            if len(preprocessed_data[column].unique()) > 5:
-                                if len(preprocessed_data[column].unique()) < 45:
-                                    plt.figure(figsize=(8, 6))
-                                    sns.countplot(y=preprocessed_data[column])
-                                    plt.xticks(rotation=0)
-                                    st.pyplot()
-                                else:
-                                    st.error(f"Skipping visualization for column {column} due to too many unique values.")
-                            else:
-                                plt.figure(figsize=(8, 6))
-                                sns.countplot(x=preprocessed_data[column])
-                                plt.xticks(rotation=0)
-                                st.pyplot()
-                        else:
-                            plt.figure(figsize=(8, 6))
-                            sns.histplot(data=preprocessed_data[column], kde=True)
-                            st.pyplot()
-                    else:
-                        if len(preprocessed_data[column].unique()) > 5:
-                            if len(preprocessed_data[column].unique()) < 45:
-                                plt.figure(figsize=(8, 6))
-                                sns.countplot(y=preprocessed_data[column])
-                                plt.xticks(rotation=0)
-                                st.pyplot()
-                            else:
-                                st.error(f"Skipping visualization for column {column} due to too many unique values.")
-                        else:
-                            plt.figure(figsize=(8, 6))
-                            sns.countplot(x=preprocessed_data[column])
-                            plt.xticks(rotation=0)
-                            st.pyplot()
-        else:
-            st.error(verification_result)
-    else:
-        st.error(verification_result)
-=======
                 
                 # Visualize each cluster separately
                 for cluster_label in preprocessed_data['Cluster'].unique():
@@ -729,4 +709,3 @@ if uploaded_file is not None:
 
             st.write("Predicted Cluster:")
             st.write(predicted_cluster[0])
->>>>>>> Stashed changes
