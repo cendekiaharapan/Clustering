@@ -11,6 +11,7 @@ from yellowbrick.cluster import KElbowVisualizer
 from kmodes.kprototypes import KPrototypes
 from kmodes.kmodes import KModes
 from sklearn.cluster import KMeans
+from sklearn.preprocessing import RobustScaler
 
 # Function to preprocess the data based on user selections
 def preprocess_data(data, selected_columns, preprocessing_method):
@@ -62,9 +63,9 @@ def verify_file(file):
                 return f"File '{file_name}' meets the criteria"
     return "Please upload a file."
 
-st.title("Clustering Peserta Didik Sekolah Cendekia Harapan")
+st.title("Clustering App")
 
-uploaded_file = st.file_uploader("Choose file CSV", type=["csv", "xls", "xlsx"])
+uploaded_file = st.file_uploader("Upload a CSV or Excel File:", type=["csv", "xls", "xlsx"])
 
 if uploaded_file is not None:
     st.write("Uploaded Files:")
@@ -129,7 +130,7 @@ if uploaded_file is not None:
                 st.info("Performing Manual Clustering Using K-Means Algorithm... (This may take a moment)")
                 # If there are no categorical columns, perform K-Means clustering
                 # Standardize the continuous columns
-                scaler = StandardScaler()
+                scaler = RobustScaler()
                 selected_data[continuous_columns] = scaler.fit_transform(selected_data[continuous_columns])
                 
                 # Create a K-Means model
@@ -154,7 +155,7 @@ if uploaded_file is not None:
                 selected_data = pd.get_dummies(selected_data, columns=categorical_columns)
                 
                 # Standardize the continuous columns
-                scaler = StandardScaler()
+                scaler = RobustScaler()
                 selected_data[continuous_columns] = scaler.fit_transform(selected_data[continuous_columns])
                 
                 # Create a K-Prototypes model
@@ -232,7 +233,7 @@ if uploaded_file is not None:
                 st.info("Performing Automatic Clustering Using K-Means Algorithm... (This may take a moment)")
                 # If there are no categorical columns, perform K-Means clustering
                 # Standardize the continuous columns
-                scaler = StandardScaler()
+                scaler = RobustScaler()
                 selected_data[continuous_columns] = scaler.fit_transform(selected_data[continuous_columns])
                 
                 fig, ax = plt.subplots()
@@ -278,7 +279,7 @@ if uploaded_file is not None:
                 selected_data = pd.get_dummies(selected_data, columns=categorical_columns)
                 
                 # Scale the continuous columns
-                scaler = StandardScaler()
+                scaler = RobustScaler()
                 selected_data[continuous_columns] = scaler.fit_transform(selected_data[continuous_columns])
                 # Create a Matplotlib figure and axis
                 fig, ax = plt.subplots()
