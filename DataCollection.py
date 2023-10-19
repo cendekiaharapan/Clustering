@@ -66,7 +66,9 @@ def verify_file(file):
 st.title("Clustering App")
 
 uploaded_file = st.file_uploader("Upload a CSV or Excel File:", type=["csv", "xls", "xlsx"])
-
+categorical_columns = None  # Inisialisasi variabel categorical_columns
+selected_columns = None  # Inisialisasi variabel selected_columns   
+continuous_columns = None
 if uploaded_file is not None:
     st.write("Uploaded Files:")
     st.write(uploaded_file.name)
@@ -75,7 +77,6 @@ if uploaded_file is not None:
     
     st.write("Input File:")
     st.write(data)
-    
     st.sidebar.header("Data Preprocessing")
     
     # Allow users to select columns to be clustered
@@ -95,7 +96,6 @@ if uploaded_file is not None:
 
     if clustering_method == "Manual":
         num_clusters = st.sidebar.number_input("Enter the number of clusters:", min_value=2, value=2)
-
 
         if st.sidebar.button("Perform Manual Clustering"):
             # Select the relevant columns for clustering (numeric and categorical)
@@ -117,6 +117,8 @@ if uploaded_file is not None:
                 # Fit the model to the data
                 clusters = kmodes.fit_predict(selected_data)
 
+                st.session_state.model = kmodes
+
                 # Add cluster labels to the preprocessed_data
                 preprocessed_data['Cluster'] = clusters
 
@@ -132,12 +134,15 @@ if uploaded_file is not None:
                 # Standardize the continuous columns
                 scaler = RobustScaler()
                 selected_data[continuous_columns] = scaler.fit_transform(selected_data[continuous_columns])
+                st.session_state.scaler = scaler
                 
                 # Create a K-Means model
                 kmeans = KMeans(n_clusters=num_clusters, init='k-means++', n_init=10, random_state=0, verbose=2)
 
                 # Fit the model to the data
                 clusters = kmeans.fit_predict(selected_data[continuous_columns])
+
+                st.session_state.model = kmeans
 
                 # Add cluster labels to the preprocessed_data
                 preprocessed_data['Cluster'] = clusters
@@ -157,12 +162,14 @@ if uploaded_file is not None:
                 # Standardize the continuous columns
                 scaler = RobustScaler()
                 selected_data[continuous_columns] = scaler.fit_transform(selected_data[continuous_columns])
+                st.session_state.scaler = scaler
                 
                 # Create a K-Prototypes model
                 try :
                     kprot = KPrototypes(n_clusters=num_clusters, init='Cao', n_init=1, verbose=2)
                     # Fit the model to the data
                     clusters = kprot.fit_predict(selected_data, categorical=list(range(len(categorical_columns))))
+                    st.session_state.model = kprot
                     # Add cluster labels to the preprocessed_data
                     preprocessed_data['Cluster'] = clusters
                     # Display the clustered data
@@ -173,10 +180,6 @@ if uploaded_file is not None:
                     
                 except: 
                     st.error(f"Cannot perfom cluster in {num_clusters} clusters, Please try another amount of clusters")
-            
-
-         
-
 
     if clustering_method == "Automatic":
         if st.sidebar.button("Perform Automatic Clustering"):
@@ -217,6 +220,7 @@ if uploaded_file is not None:
                     # Now, use the optimal_num_clusters for K-Modes clustering
                     kmodes = KModes(n_clusters=optimal_num_clusters, init='Cao', n_init=1, verbose=2)
                     clusters = kmodes.fit_predict(selected_data)
+                    st.session_state.model = kmodes
 
                     # Add cluster labels to the preprocessed_data
                     preprocessed_data['Cluster'] = clusters
@@ -235,6 +239,7 @@ if uploaded_file is not None:
                 # Standardize the continuous columns
                 scaler = RobustScaler()
                 selected_data[continuous_columns] = scaler.fit_transform(selected_data[continuous_columns])
+                st.session_state.scaler = scaler
                 
                 fig, ax = plt.subplots()
 
@@ -262,6 +267,7 @@ if uploaded_file is not None:
                     kmeans = KMeans(n_clusters=optimal_num_clusters, init='k-means++', n_init=10, random_state=0, verbose=2)
                     # Fit the model to the data
                     clusters = kmeans.fit_predict(selected_data[continuous_columns])
+                    st.session_state.model = kmeans
 
                     # Add cluster labels to the preprocessed_data
                     preprocessed_data['Cluster'] = clusters
@@ -281,6 +287,7 @@ if uploaded_file is not None:
                 # Scale the continuous columns
                 scaler = RobustScaler()
                 selected_data[continuous_columns] = scaler.fit_transform(selected_data[continuous_columns])
+                st.session_state.scaler = scaler
                 # Create a Matplotlib figure and axis
                 fig, ax = plt.subplots()
 
@@ -311,6 +318,7 @@ if uploaded_file is not None:
                     # Now, use the optimal_num_clusters for K-Prototypes clustering with random initialization
                     kprot = KPrototypes(n_clusters=optimal_num_clusters, init='Cao', n_init=1, verbose=2)
                     clusters = kprot.fit_predict(selected_data, categorical=list(range(len(categorical_columns))))
+                    st.session_state.model = kprot
 
                     # Add cluster labels to the preprocessed_data
                     preprocessed_data['Cluster'] = clusters
@@ -322,5 +330,67 @@ if uploaded_file is not None:
                     st.write("Optimal Number Of Cluster:", optimal_num_clusters)
                     st.write(preprocessed_data)
                     st.success("Automatic Clustering completed!")
+<<<<<<< Updated upstream
+=======
+    
+    # Check if categorical_columns exists in session state, and if not, initialize it
+    if categorical_columns is not None:
+        st.session_state.categorical_columns = categorical_columns  # You can set this to your default value if needed
 
-                
+    # Check if categorical_columns exists in session state, and if not, initialize it
+    if continuous_columns is not None:
+        st.session_state.continuous_columns = continuous_columns  # You can set this to your default value if needed
+
+    # Check if selected_columns exists in session state, and if not, initialize it
+    if selected_columns is not None:
+        st.session_state.selected_columns = selected_columns  # You can set this to your default value if needed
+
+    # Check if categorical_columns is defined and selected_columns is defined
+    if (st.session_state.categorical_columns is not None and st.session_state.selected_columns is not None):
+        categorical_columns = st.session_state.categorical_columns
+        selected_columns = st.session_state.selected_columns
+
+
+    print(st.session_state.categorical_columns, st.session_state.selected_columns)
+>>>>>>> Stashed changes
+
+    if (st.session_state.categorical_columns is not None and st.session_state.selected_columns is not None and st.session_state.model is not None):
+        st.sidebar.header("Input Data and Prediction")
+
+        # Create a form for input data
+        with st.sidebar.form("Input Data Form"):
+            input_data = {}
+            for column in st.session_state.selected_columns:
+                if column in st.session_state.categorical_columns:
+                    input_data[column] = st.text_input(f"Enter {column}", key=f"input_{column}")
+                else:
+                    input_data[column] = st.number_input(f"Enter {column}", key=f"input_{column}")
+
+            submitted = st.form_submit_button("Predict Cluster")
+        
+        # Make predictions based on the input data
+        if submitted:
+            # Convert input data into a DataFrame
+            input_df = pd.DataFrame([input_data])
+
+            # Preprocess the input data (similar to how you preprocessed the original data)
+            input_df = preprocess_data(input_df, st.session_state.selected_columns, preprocessing_method)
+
+            # Use the clustering model to predict the cluster for the input data
+            if len(st.session_state.categorical_columns) == 0:
+                input_df = pd.get_dummies(input_df, columns=st.session_state.categorical_columns)
+                predicted_cluster = st.session_state.model.predict(input_df)
+            elif len(st.session_state.continuous_columns) == 0:
+                input_df = scaler.transform(input_df[st.session_state.continuous_columns])
+                predicted_cluster = st.session_state.model.predict(input_df[st.session_state.continuous_columns])
+            else:
+                print("input before", input_df)
+                input_df = pd.get_dummies(input_df, columns=st.session_state.categorical_columns)
+                print(input_df, st.session_state.categorical_columns)
+                input_df[st.session_state.continuous_columns] = st.session_state.scaler.transform(input_df[st.session_state.continuous_columns])
+                predicted_cluster = st.session_state.model.predict(input_df, categorical=list(range(len(st.session_state.categorical_columns))))
+
+            st.write("Predicted Cluster:")
+            st.write(predicted_cluster[0])
+
+                    
