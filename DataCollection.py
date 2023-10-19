@@ -330,8 +330,6 @@ if uploaded_file is not None:
                     st.write("Optimal Number Of Cluster:", optimal_num_clusters)
                     st.write(preprocessed_data)
                     st.success("Automatic Clustering completed!")
-<<<<<<< Updated upstream
-=======
     
     # Check if categorical_columns exists in session state, and if not, initialize it
     if categorical_columns is not None:
@@ -352,7 +350,6 @@ if uploaded_file is not None:
 
 
     print(st.session_state.categorical_columns, st.session_state.selected_columns)
->>>>>>> Stashed changes
 
     if (st.session_state.categorical_columns is not None and st.session_state.selected_columns is not None and st.session_state.model is not None):
         st.sidebar.header("Input Data and Prediction")
@@ -392,5 +389,3 @@ if uploaded_file is not None:
 
             st.write("Predicted Cluster:")
             st.write(predicted_cluster[0])
-
-                    
