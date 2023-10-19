@@ -471,39 +471,7 @@ if uploaded_file is not None:
                     st.write("Optimal Number Of Cluster:", optimal_num_clusters)
                     st.write(preprocessed_data)
                     
-                    for column in selected_columns:
-                        unique_values = preprocessed_data[column].unique()
-                        if len(unique_values) == 1:
-                            st.success(f"Only one category (value) in column {column}: {unique_values[0]}, and the number of it's number is: {len(preprocessed_data[column])}")
-                        elif ptypes.is_numeric_dtype(preprocessed_data[column]):
-                            if len(preprocessed_data[column].unique()) < 0.5 * len(preprocessed_data[column]):
-                                if len(preprocessed_data[column].unique()) > 5:
-                                    if len(preprocessed_data[column].unique()) < 45:
-                                        if len(preprocessed_data[column].unique()) > 20:
-                                            plt.figure(figsize=(8, 6))
-                                            sns.histplot(data=preprocessed_data[column], kde=True)
-                                            st.pyplot()
-                                        else:
-                                            plt.figure(figsize=(8, 6))
-                                            sns.countplot(y=preprocessed_data[column])
-                                            plt.xticks(rotation=0)
-                                            st.pyplot()
-                                    else:
-                                        st.error(f"Skipping visualization for column {column} due to too many unique values.")
-                                else:
-                                    plt.figure(figsize=(8, 6))
-                                    sns.countplot(x=preprocessed_data[column])
-                                    plt.xticks(rotation=0)
-                                    st.pyplot()
-                            else:
-                                plt.figure(figsize=(8, 6))
-                                sns.histplot(data=preprocessed_data[column], kde=True)
-                                st.pyplot()
-                        else:
-                            if len(preprocessed_data[column].unique()) > 5:
-                                if len(preprocessed_data[column].unique()) < 45:
-                                    plt.figure(figsize=(8, 6))
-                                    sns.c# Visualize each cluster separately
+                    # Visualize each cluster separately
                     for cluster_label in preprocessed_data['Cluster'].unique():
                         st.write(f"Visualizations for Cluster {cluster_label}:")
                         cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
