@@ -97,11 +97,11 @@ if uploaded_file is not None:
                 for column in selected_columns:
                     unique_values = preprocessed_data[column].unique()
                     if len(unique_values) == 1:
-                        st.success(f"Only one category (value) in column {column}: {unique_values[0]}: {len(preprocessed_data[column])}")
+                        st.success(f"Only one category (value) in column {column}: {unique_values[0]}, and the number of it's number is: {len(preprocessed_data[column])}")
                     elif ptypes.is_numeric_dtype(preprocessed_data[column]):
                         if len(preprocessed_data[column].unique()) < 0.5 * len(preprocessed_data[column]):
                             if len(preprocessed_data[column].unique()) > 5:
-                                if len(preprocessed_data[column].unique()) < 20:
+                                if len(preprocessed_data[column].unique()) < 45:
                                     plt.figure(figsize=(8, 6))
                                     sns.countplot(y=preprocessed_data[column])
                                     plt.xticks(rotation=0)
@@ -119,7 +119,7 @@ if uploaded_file is not None:
                             st.pyplot()
                     else:
                         if len(preprocessed_data[column].unique()) > 5:
-                            if len(preprocessed_data[column].unique()) < 20:
+                            if len(preprocessed_data[column].unique()) < 45:
                                 plt.figure(figsize=(8, 6))
                                 sns.countplot(y=preprocessed_data[column])
                                 plt.xticks(rotation=0)
