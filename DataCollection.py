@@ -92,6 +92,7 @@ if uploaded_file is not None:
     preprocessing_method = st.sidebar.radio("Select preprocessing method", ("Drop", "Imputation"))
     
     st.sidebar.header("Clustering Method")
+    st.set_option('deprecation.showPyplotGlobalUse', False)
     # Add radio button for manual or automatic clustering
     clustering_method = st.sidebar.radio("Select Clustering Method", ("Manual", "Automatic"))
     
@@ -110,6 +111,7 @@ if uploaded_file is not None:
             # Identify categorical and continuous columns
             categorical_columns = selected_data.select_dtypes(include=['object']).columns
             continuous_columns = selected_data.select_dtypes(exclude=['object']).columns
+            FIG_SIZE = (8, 6)
 
             if len(continuous_columns) == 0:
                 st.info("Performing Manual Clustering Using K-Modes Algorithm... (This may take a moment)")
@@ -132,54 +134,84 @@ if uploaded_file is not None:
                 st.write("Manual Clustering Result:")
                 st.write(f"Number of clusters : {num_clusters}")
                 st.write(preprocessed_data)
-                
-                # Visualize each cluster separately
-                for cluster_label in preprocessed_data['Cluster'].unique():
-                    st.write(f"Visualizations for Cluster {cluster_label}:")
-                    cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
-                    for column in selected_columns:
-                        unique_values = cluster_data[column].unique()
-                        if len(unique_values) == 1:
-                            st.success(f"Only one category (value) in column {column} for Cluster {cluster_label}: {unique_values[0]}, and the number of it's number is: {len(cluster_data[column])}")
-                        elif ptypes.is_numeric_dtype(cluster_data[column]):
-                            if len(cluster_data[column].unique()) < 0.5 * len(cluster_data[column]):
-                                if len(cluster_data[column].unique()) > 5:
-                                    if len(cluster_data[column].unique()) < 45:
-                                        if len(cluster_data[column].unique()) > 20:
-                                            plt.figure(figsize=(8, 6))
-                                            sns.histplot(data=cluster_data[column], kde=True)
+
+                # Visualize each selected column
+                for column in selected_columns:
+                    cluster_label = ""  # Initialize the cluster_label variable
+                    st.success(f"Visualizations for Column: {column}")
+                    if ptypes.is_numeric_dtype(preprocessed_data[column]):
+                        if len(preprocessed_data[column].unique()) == 1:
+                            st.success(f"Only one category (value) in column {column} for Cluster {cluster_label}: {preprocessed_data[column].unique()[0]}, and the number of its occurrences is: {len(preprocessed_data[column])}")
+                        else:
+                            if len(preprocessed_data[column].unique()) < 0.5 * len(preprocessed_data[column]):
+                                if len(preprocessed_data[column].unique()) > 5:
+                                    if len(preprocessed_data[column].unique()) < 30:
+                                        st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                        try:
+                                            plt.figure(figsize=FIG_SIZE)
+                                            cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
+                                            for cluster_label in cluster_labels:
+                                                cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
+                                                sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
+                                            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
+                                            plt.title(f"{column} Histogram Comparison Across Clusters")
+                                            st.pyplot()
+                                        except Exception as e:
+                                            st.error(f"Error occurred during visualization: {e}")
+                                    else:
+                                        st.error(f"Skipping visualization for column {column} due to too many unique values.")
+                                else:
+                                    st.write(f"Bar Chart for {column} Across Clusters:")
+                                    try:
+                                        if len(preprocessed_data[column].unique()) < 30:
+                                            if len(preprocessed_data[column].unique()) <= 5:
+                                                g = sns.catplot(x=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
+                                            else:
+                                                g = sns.catplot(y=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
+                                            for ax in g.axes.flat[1:]:
+                                                sns.despine(ax=ax, left=True)
+                                            for ax in g.axes.flat:
+                                                ax.set_xlabel(ax.get_title())
+                                                ax.set_title('')
+                                                ax.margins(x=0.1)  # slightly more margin as a separation
                                             st.pyplot()
                                         else:
-                                            plt.figure(figsize=(8, 6))
-                                            sns.countplot(y=cluster_data[column])
-                                            plt.xticks(rotation=0)
-                                            st.pyplot()
-                                    else:
-                                        st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
-                                else:
-                                    plt.figure(figsize=(8, 6))
-                                    sns.countplot(x=cluster_data[column])
-                                    plt.xticks(rotation=0)
-                                    st.pyplot()
+                                            st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
+                                    except Exception as e:
+                                        st.error(f"Error occurred during visualization: {e}")
                             else:
-                                plt.figure(figsize=(8, 6))
-                                sns.histplot(data=cluster_data[column], kde=True)
-                                st.pyplot()
-                        else:
-                            if len(cluster_data[column].unique()) > 5:
-                                if len(cluster_data[column].unique()) < 45:
-                                    plt.figure(figsize=(8, 6))
-                                    sns.countplot(y=cluster_data[column])
-                                    plt.xticks(rotation=0)
+                                st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                try:
+                                    plt.figure(figsize=FIG_SIZE)
+                                    cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
+                                    for cluster_label in cluster_labels:
+                                        cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
+                                        sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
+                                    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
+                                    plt.title(f"{column} Histogram Comparison Across Clusters")
                                     st.pyplot()
+                                except Exception as e:
+                                    st.error(f"Error occurred during visualization: {e}")
+                    else:
+                        st.write(f"Bar Chart for {column} Across Clusters:")
+                        try:
+                            if len(preprocessed_data[column].unique()) < 30:
+                                if len(preprocessed_data[column].unique()) <= 5:
+                                    g = sns.catplot(x=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
                                 else:
-                                    st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
-                            else:
-                                plt.figure(figsize=(8, 6))
-                                sns.countplot(x=cluster_data[column])
-                                plt.xticks(rotation=0)
+                                    g = sns.catplot(y=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
+                                for ax in g.axes.flat[1:]:
+                                    sns.despine(ax=ax, left=True)
+                                for ax in g.axes.flat:
+                                    ax.set_xlabel(ax.get_title())
+                                    ax.set_title('')
+                                    ax.margins(x=0.1)  # slightly more margin as a separation
                                 st.pyplot()
-                st.success("Manual Clustering completed!")
+                            else:
+                                st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
+                        except Exception as e:
+                            st.error(f"Error occurred during visualization: {e}")
+                st.success("Manual Clustering completed!")
 
             elif len(categorical_columns) == 0:
                 st.info("Performing Manual Clustering Using K-Means Algorithm... (This may take a moment)")
@@ -204,54 +236,84 @@ if uploaded_file is not None:
                 st.write("Manual Clustering Result:")
                 st.write(f"Number of clusters : {num_clusters}")
                 st.write(preprocessed_data)
-                
-                # Visualize each cluster separately
-                for cluster_label in preprocessed_data['Cluster'].unique():
-                    st.write(f"Visualizations for Cluster {cluster_label}:")
-                    cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
-                    for column in selected_columns:
-                        unique_values = cluster_data[column].unique()
-                        if len(unique_values) == 1:
-                            st.success(f"Only one category (value) in column {column} for Cluster {cluster_label}: {unique_values[0]}, and the number of it's number is: {len(cluster_data[column])}")
-                        elif ptypes.is_numeric_dtype(cluster_data[column]):
-                            if len(cluster_data[column].unique()) < 0.5 * len(cluster_data[column]):
-                                if len(cluster_data[column].unique()) > 5:
-                                    if len(cluster_data[column].unique()) < 45:
-                                        if len(cluster_data[column].unique()) > 20:
-                                            plt.figure(figsize=(8, 6))
-                                            sns.histplot(data=cluster_data[column], kde=True)
+
+                # Visualize each selected column
+                for column in selected_columns:
+                    cluster_label = ""  # Initialize the cluster_label variable
+                    st.success(f"Visualizations for Column: {column}")
+                    if ptypes.is_numeric_dtype(preprocessed_data[column]):
+                        if len(preprocessed_data[column].unique()) == 1:
+                            st.success(f"Only one category (value) in column {column} for Cluster {cluster_label}: {preprocessed_data[column].unique()[0]}, and the number of its occurrences is: {len(preprocessed_data[column])}")
+                        else:
+                            if len(preprocessed_data[column].unique()) < 0.5 * len(preprocessed_data[column]):
+                                if len(preprocessed_data[column].unique()) > 5:
+                                    if len(preprocessed_data[column].unique()) < 30:
+                                        st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                        try:
+                                            plt.figure(figsize=FIG_SIZE)
+                                            cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
+                                            for cluster_label in cluster_labels:
+                                                cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
+                                                sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
+                                            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
+                                            plt.title(f"{column} Histogram Comparison Across Clusters")
+                                            st.pyplot()
+                                        except Exception as e:
+                                            st.error(f"Error occurred during visualization: {e}")
+                                    else:
+                                        st.error(f"Skipping visualization for column {column} due to too many unique values.")
+                                else:
+                                    st.write(f"Bar Chart for {column} Across Clusters:")
+                                    try:
+                                        if len(preprocessed_data[column].unique()) < 30:
+                                            if len(preprocessed_data[column].unique()) <= 5:
+                                                g = sns.catplot(x=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
+                                            else:
+                                                g = sns.catplot(y=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
+                                            for ax in g.axes.flat[1:]:
+                                                sns.despine(ax=ax, left=True)
+                                            for ax in g.axes.flat:
+                                                ax.set_xlabel(ax.get_title())
+                                                ax.set_title('')
+                                                ax.margins(x=0.1)  # slightly more margin as a separation
                                             st.pyplot()
                                         else:
-                                            plt.figure(figsize=(8, 6))
-                                            sns.countplot(y=cluster_data[column])
-                                            plt.xticks(rotation=0)
-                                            st.pyplot()
-                                    else:
-                                        st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
-                                else:
-                                    plt.figure(figsize=(8, 6))
-                                    sns.countplot(x=cluster_data[column])
-                                    plt.xticks(rotation=0)
-                                    st.pyplot()
+                                            st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
+                                    except Exception as e:
+                                        st.error(f"Error occurred during visualization: {e}")
                             else:
-                                plt.figure(figsize=(8, 6))
-                                sns.histplot(data=cluster_data[column], kde=True)
-                                st.pyplot()
-                        else:
-                            if len(cluster_data[column].unique()) > 5:
-                                if len(cluster_data[column].unique()) < 45:
-                                    plt.figure(figsize=(8, 6))
-                                    sns.countplot(y=cluster_data[column])
-                                    plt.xticks(rotation=0)
+                                st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                try:
+                                    plt.figure(figsize=FIG_SIZE)
+                                    cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
+                                    for cluster_label in cluster_labels:
+                                        cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
+                                        sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
+                                    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
+                                    plt.title(f"{column} Histogram Comparison Across Clusters")
                                     st.pyplot()
+                                except Exception as e:
+                                    st.error(f"Error occurred during visualization: {e}")
+                    else:
+                        st.write(f"Bar Chart for {column} Across Clusters:")
+                        try:
+                            if len(preprocessed_data[column].unique()) < 30:
+                                if len(preprocessed_data[column].unique()) <= 5:
+                                    g = sns.catplot(x=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
                                 else:
-                                    st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
-                            else:
-                                plt.figure(figsize=(8, 6))
-                                sns.countplot(x=cluster_data[column])
-                                plt.xticks(rotation=0)
+                                    g = sns.catplot(y=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
+                                for ax in g.axes.flat[1:]:
+                                    sns.despine(ax=ax, left=True)
+                                for ax in g.axes.flat:
+                                    ax.set_xlabel(ax.get_title())
+                                    ax.set_title('')
+                                    ax.margins(x=0.1)  # slightly more margin as a separation
                                 st.pyplot()
-                st.success("Manual Clustering completed!")
+                            else:
+                                st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
+                        except Exception as e:
+                            st.error(f"Error occurred during visualization: {e}")
+                st.success("Manual Clustering completed!")
 
             else:
                 st.info("Performing Manual Clustering Using K-Prototypes Algorithm... (This may take a moment)")
@@ -277,53 +339,83 @@ if uploaded_file is not None:
                     st.write(f"Number of clusters : {num_clusters}")
                     st.write(preprocessed_data)
                     
-                    # Visualize each cluster separately
-                    for cluster_label in preprocessed_data['Cluster'].unique():
-                        st.write(f"Visualizations for Cluster {cluster_label}:")
-                        cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
-                        for column in selected_columns:
-                            unique_values = cluster_data[column].unique()
-                            if len(unique_values) == 1:
-                                st.success(f"Only one category (value) in column {column} for Cluster {cluster_label}: {unique_values[0]}, and the number of it's number is: {len(cluster_data[column])}")
-                            elif ptypes.is_numeric_dtype(cluster_data[column]):
-                                if len(cluster_data[column].unique()) < 0.5 * len(cluster_data[column]):
-                                    if len(cluster_data[column].unique()) > 5:
-                                        if len(cluster_data[column].unique()) < 45:
-                                            if len(cluster_data[column].unique()) > 20:
-                                                plt.figure(figsize=(8, 6))
-                                                sns.histplot(data=cluster_data[column], kde=True)
+                    # Visualize each selected column
+                    for column in selected_columns:
+                        cluster_label = ""  # Initialize the cluster_label variable
+                        st.success(f"Visualizations for Column: {column}")
+                        if ptypes.is_numeric_dtype(preprocessed_data[column]):
+                            if len(preprocessed_data[column].unique()) == 1:
+                                st.success(f"Only one category (value) in column {column} for Cluster {cluster_label}: {preprocessed_data[column].unique()[0]}, and the number of its occurrences is: {len(preprocessed_data[column])}")
+                            else:
+                                if len(preprocessed_data[column].unique()) < 0.5 * len(preprocessed_data[column]):
+                                    if len(preprocessed_data[column].unique()) > 5:
+                                        if len(preprocessed_data[column].unique()) < 30:
+                                            st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                            try:
+                                                plt.figure(figsize=FIG_SIZE)
+                                                cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
+                                                for cluster_label in cluster_labels:
+                                                    cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
+                                                    sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
+                                                plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
+                                                plt.title(f"{column} Histogram Comparison Across Clusters")
+                                                st.pyplot()
+                                            except Exception as e:
+                                                st.error(f"Error occurred during visualization: {e}")
+                                        else:
+                                            st.error(f"Skipping visualization for column {column} due to too many unique values.")
+                                    else:
+                                        st.write(f"Bar Chart for {column} Across Clusters:")
+                                        try:
+                                            if len(preprocessed_data[column].unique()) < 30:
+                                                if len(preprocessed_data[column].unique()) <= 5:
+                                                    g = sns.catplot(x=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
+                                                else:
+                                                    g = sns.catplot(y=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
+                                                for ax in g.axes.flat[1:]:
+                                                    sns.despine(ax=ax, left=True)
+                                                for ax in g.axes.flat:
+                                                    ax.set_xlabel(ax.get_title())
+                                                    ax.set_title('')
+                                                    ax.margins(x=0.1)  # slightly more margin as a separation
                                                 st.pyplot()
                                             else:
-                                                plt.figure(figsize=(8, 6))
-                                                sns.countplot(y=cluster_data[column])
-                                                plt.xticks(rotation=0)
-                                                st.pyplot()
-                                        else:
-                                            st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
-                                    else:
-                                        plt.figure(figsize=(8, 6))
-                                        sns.countplot(x=cluster_data[column])
-                                        plt.xticks(rotation=0)
-                                        st.pyplot()
+                                                st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
+                                        except Exception as e:
+                                            st.error(f"Error occurred during visualization: {e}")
                                 else:
-                                    plt.figure(figsize=(8, 6))
-                                    sns.histplot(data=cluster_data[column], kde=True)
-                                    st.pyplot()
-                            else:
-                                if len(cluster_data[column].unique()) > 5:
-                                    if len(cluster_data[column].unique()) < 45:
-                                        plt.figure(figsize=(8, 6))
-                                        sns.countplot(y=cluster_data[column])
-                                        plt.xticks(rotation=0)
+                                    st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                    try:
+                                        plt.figure(figsize=FIG_SIZE)
+                                        cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
+                                        for cluster_label in cluster_labels:
+                                            cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
+                                            sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
+                                        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
+                                        plt.title(f"{column} Histogram Comparison Across Clusters")
                                         st.pyplot()
+                                    except Exception as e:
+                                        st.error(f"Error occurred during visualization: {e}")
+                        else:
+                            st.write(f"Bar Chart for {column} Across Clusters:")
+                            try:
+                                if len(preprocessed_data[column].unique()) < 30:
+                                    if len(preprocessed_data[column].unique()) <= 5:
+                                        g = sns.catplot(x=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
                                     else:
-                                        st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
-                                else:
-                                    plt.figure(figsize=(8, 6))
-                                    sns.countplot(x=cluster_data[column])
-                                    plt.xticks(rotation=0)
+                                        g = sns.catplot(y=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
+                                    for ax in g.axes.flat[1:]:
+                                        sns.despine(ax=ax, left=True)
+                                    for ax in g.axes.flat:
+                                        ax.set_xlabel(ax.get_title())
+                                        ax.set_title('')
+                                        ax.margins(x=0.1)  # slightly more margin as a separation
                                     st.pyplot()
-                    st.success("Manual Clustering completed!")
+                                else:
+                                    st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
+                            except Exception as e:
+                                st.error(f"Error occurred during visualization: {e}")
+                    st.success("Manual Clustering completed!")
                     
                 except: 
                     st.error(f"Cannot perfom cluster in {num_clusters} clusters, Please try another amount of clusters")
@@ -336,6 +428,7 @@ if uploaded_file is not None:
             # Identify categorical columns
             categorical_columns = selected_data.select_dtypes(include=['object']).columns
             continuous_columns = selected_data.select_dtypes(exclude=['object']).columns
+            FIG_SIZE = (8, 6)
 
             if len(continuous_columns) == 0:
                 st.info("Performing Automatic Clustering Using K-Modes Algorithm... (This may take a moment)")
@@ -377,53 +470,83 @@ if uploaded_file is not None:
                     st.write("Optimal Number Of Cluster:", optimal_num_clusters)
                     st.write(preprocessed_data)
                     
-                    # Visualize each cluster separately
-                    for cluster_label in preprocessed_data['Cluster'].unique():
-                        st.write(f"Visualizations for Cluster {cluster_label}:")
-                        cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
-                        for column in selected_columns:
-                            unique_values = cluster_data[column].unique()
-                            if len(unique_values) == 1:
-                                st.success(f"Only one category (value) in column {column} for Cluster {cluster_label}: {unique_values[0]}, and the number of it's number is: {len(cluster_data[column])}")
-                            elif ptypes.is_numeric_dtype(cluster_data[column]):
-                                if len(cluster_data[column].unique()) < 0.5 * len(cluster_data[column]):
-                                    if len(cluster_data[column].unique()) > 5:
-                                        if len(cluster_data[column].unique()) < 45:
-                                            if len(cluster_data[column].unique()) > 20:
-                                                plt.figure(figsize=(8, 6))
-                                                sns.histplot(data=cluster_data[column], kde=True)
+                    # Visualize each selected column
+                    for column in selected_columns:
+                        cluster_label = ""  # Initialize the cluster_label variable
+                        st.success(f"Visualizations for Column: {column}")
+                        if ptypes.is_numeric_dtype(preprocessed_data[column]):
+                            if len(preprocessed_data[column].unique()) == 1:
+                                st.success(f"Only one category (value) in column {column} for Cluster {cluster_label}: {preprocessed_data[column].unique()[0]}, and the number of its occurrences is: {len(preprocessed_data[column])}")
+                            else:
+                                if len(preprocessed_data[column].unique()) < 0.5 * len(preprocessed_data[column]):
+                                    if len(preprocessed_data[column].unique()) > 5:
+                                        if len(preprocessed_data[column].unique()) < 30:
+                                            st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                            try:
+                                                plt.figure(figsize=FIG_SIZE)
+                                                cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
+                                                for cluster_label in cluster_labels:
+                                                    cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
+                                                    sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
+                                                plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
+                                                plt.title(f"{column} Histogram Comparison Across Clusters")
+                                                st.pyplot()
+                                            except Exception as e:
+                                                st.error(f"Error occurred during visualization: {e}")
+                                        else:
+                                            st.error(f"Skipping visualization for column {column} due to too many unique values.")
+                                    else:
+                                        st.write(f"Bar Chart for {column} Across Clusters:")
+                                        try:
+                                            if len(preprocessed_data[column].unique()) < 30:
+                                                if len(preprocessed_data[column].unique()) <= 5:
+                                                    g = sns.catplot(x=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
+                                                else:
+                                                    g = sns.catplot(y=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
+                                                for ax in g.axes.flat[1:]:
+                                                    sns.despine(ax=ax, left=True)
+                                                for ax in g.axes.flat:
+                                                    ax.set_xlabel(ax.get_title())
+                                                    ax.set_title('')
+                                                    ax.margins(x=0.1)  # slightly more margin as a separation
                                                 st.pyplot()
                                             else:
-                                                plt.figure(figsize=(8, 6))
-                                                sns.countplot(y=cluster_data[column])
-                                                plt.xticks(rotation=0)
-                                                st.pyplot()
-                                        else:
-                                            st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
-                                    else:
-                                        plt.figure(figsize=(8, 6))
-                                        sns.countplot(x=cluster_data[column])
-                                        plt.xticks(rotation=0)
-                                        st.pyplot()
+                                                st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
+                                        except Exception as e:
+                                            st.error(f"Error occurred during visualization: {e}")
                                 else:
-                                    plt.figure(figsize=(8, 6))
-                                    sns.histplot(data=cluster_data[column], kde=True)
-                                    st.pyplot()
-                            else:
-                                if len(cluster_data[column].unique()) > 5:
-                                    if len(cluster_data[column].unique()) < 45:
-                                        plt.figure(figsize=(8, 6))
-                                        sns.countplot(y=cluster_data[column])
-                                        plt.xticks(rotation=0)
+                                    st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                    try:
+                                        plt.figure(figsize=FIG_SIZE)
+                                        cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
+                                        for cluster_label in cluster_labels:
+                                            cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
+                                            sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
+                                        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
+                                        plt.title(f"{column} Histogram Comparison Across Clusters")
                                         st.pyplot()
+                                    except Exception as e:
+                                        st.error(f"Error occurred during visualization: {e}")
+                        else:
+                            st.write(f"Bar Chart for {column} Across Clusters:")
+                            try:
+                                if len(preprocessed_data[column].unique()) < 30:
+                                    if len(preprocessed_data[column].unique()) <= 5:
+                                        g = sns.catplot(x=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
                                     else:
-                                        st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
-                                else:
-                                    plt.figure(figsize=(8, 6))
-                                    sns.countplot(x=cluster_data[column])
-                                    plt.xticks(rotation=0)
+                                        g = sns.catplot(y=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
+                                    for ax in g.axes.flat[1:]:
+                                        sns.despine(ax=ax, left=True)
+                                    for ax in g.axes.flat:
+                                        ax.set_xlabel(ax.get_title())
+                                        ax.set_title('')
+                                        ax.margins(x=0.1)  # slightly more margin as a separation
                                     st.pyplot()
-                    st.success("Automatic Clustering completed!")
+                                else:
+                                    st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
+                            except Exception as e:
+                                st.error(f"Error occurred during visualization: {e}")
+                    st.success("Automatic Clustering completed!")
                 else:
                     st.error("No Optimal Clusters Found, Please Retry")
                 
@@ -471,53 +594,83 @@ if uploaded_file is not None:
                     st.write("Optimal Number Of Cluster:", optimal_num_clusters)
                     st.write(preprocessed_data)
                     
-                    # Visualize each cluster separately
-                    for cluster_label in preprocessed_data['Cluster'].unique():
-                        st.write(f"Visualizations for Cluster {cluster_label}:")
-                        cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
-                        for column in selected_columns:
-                            unique_values = cluster_data[column].unique()
-                            if len(unique_values) == 1:
-                                st.success(f"Only one category (value) in column {column} for Cluster {cluster_label}: {unique_values[0]}, and the number of it's number is: {len(cluster_data[column])}")
-                            elif ptypes.is_numeric_dtype(cluster_data[column]):
-                                if len(cluster_data[column].unique()) < 0.5 * len(cluster_data[column]):
-                                    if len(cluster_data[column].unique()) > 5:
-                                        if len(cluster_data[column].unique()) < 45:
-                                            if len(cluster_data[column].unique()) > 20:
-                                                plt.figure(figsize=(8, 6))
-                                                sns.histplot(data=cluster_data[column], kde=True)
+                    # Visualize each selected column
+                    for column in selected_columns:
+                        cluster_label = ""  # Initialize the cluster_label variable
+                        st.success(f"Visualizations for Column: {column}")
+                        if ptypes.is_numeric_dtype(preprocessed_data[column]):
+                            if len(preprocessed_data[column].unique()) == 1:
+                                st.success(f"Only one category (value) in column {column} for Cluster {cluster_label}: {preprocessed_data[column].unique()[0]}, and the number of its occurrences is: {len(preprocessed_data[column])}")
+                            else:
+                                if len(preprocessed_data[column].unique()) < 0.5 * len(preprocessed_data[column]):
+                                    if len(preprocessed_data[column].unique()) > 5:
+                                        if len(preprocessed_data[column].unique()) < 30:
+                                            st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                            try:
+                                                plt.figure(figsize=FIG_SIZE)
+                                                cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
+                                                for cluster_label in cluster_labels:
+                                                    cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
+                                                    sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
+                                                plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
+                                                plt.title(f"{column} Histogram Comparison Across Clusters")
+                                                st.pyplot()
+                                            except Exception as e:
+                                                st.error(f"Error occurred during visualization: {e}")
+                                        else:
+                                            st.error(f"Skipping visualization for column {column} due to too many unique values.")
+                                    else:
+                                        st.write(f"Bar Chart for {column} Across Clusters:")
+                                        try:
+                                            if len(preprocessed_data[column].unique()) < 30:
+                                                if len(preprocessed_data[column].unique()) <= 5:
+                                                    g = sns.catplot(x=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
+                                                else:
+                                                    g = sns.catplot(y=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
+                                                for ax in g.axes.flat[1:]:
+                                                    sns.despine(ax=ax, left=True)
+                                                for ax in g.axes.flat:
+                                                    ax.set_xlabel(ax.get_title())
+                                                    ax.set_title('')
+                                                    ax.margins(x=0.1)  # slightly more margin as a separation
                                                 st.pyplot()
                                             else:
-                                                plt.figure(figsize=(8, 6))
-                                                sns.countplot(y=cluster_data[column])
-                                                plt.xticks(rotation=0)
-                                                st.pyplot()
-                                        else:
-                                            st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
-                                    else:
-                                        plt.figure(figsize=(8, 6))
-                                        sns.countplot(x=cluster_data[column])
-                                        plt.xticks(rotation=0)
-                                        st.pyplot()
+                                                st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
+                                        except Exception as e:
+                                            st.error(f"Error occurred during visualization: {e}")
                                 else:
-                                    plt.figure(figsize=(8, 6))
-                                    sns.histplot(data=cluster_data[column], kde=True)
-                                    st.pyplot()
-                            else:
-                                if len(cluster_data[column].unique()) > 5:
-                                    if len(cluster_data[column].unique()) < 45:
-                                        plt.figure(figsize=(8, 6))
-                                        sns.countplot(y=cluster_data[column])
-                                        plt.xticks(rotation=0)
+                                    st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                    try:
+                                        plt.figure(figsize=FIG_SIZE)
+                                        cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
+                                        for cluster_label in cluster_labels:
+                                            cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
+                                            sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
+                                        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
+                                        plt.title(f"{column} Histogram Comparison Across Clusters")
                                         st.pyplot()
+                                    except Exception as e:
+                                        st.error(f"Error occurred during visualization: {e}")
+                        else:
+                            st.write(f"Bar Chart for {column} Across Clusters:")
+                            try:
+                                if len(preprocessed_data[column].unique()) < 30:
+                                    if len(preprocessed_data[column].unique()) <= 5:
+                                        g = sns.catplot(x=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
                                     else:
-                                        st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
-                                else:
-                                    plt.figure(figsize=(8, 6))
-                                    sns.countplot(x=cluster_data[column])
-                                    plt.xticks(rotation=0)
+                                        g = sns.catplot(y=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
+                                    for ax in g.axes.flat[1:]:
+                                        sns.despine(ax=ax, left=True)
+                                    for ax in g.axes.flat:
+                                        ax.set_xlabel(ax.get_title())
+                                        ax.set_title('')
+                                        ax.margins(x=0.1)  # slightly more margin as a separation
                                     st.pyplot()
-                    st.success("Automatic Clustering completed!")
+                                else:
+                                    st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
+                            except Exception as e:
+                                st.error(f"Error occurred during visualization: {e}")
+                    st.success("Automatic Clustering completed!")
                 else:
                     st.error("No Optimal Clusters Found, Please Retry")
             else :        
@@ -566,57 +719,86 @@ if uploaded_file is not None:
 
                     # Display the clustered data
                     
-                    
                     st.write("Automatic Clustering Result:")
                     st.write("Optimal Number Of Cluster:", optimal_num_clusters)
                     st.write(preprocessed_data)
                     
-                    # Visualize each cluster separately
-                    for cluster_label in preprocessed_data['Cluster'].unique():
-                        st.write(f"Visualizations for Cluster {cluster_label}:")
-                        cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
-                        for column in selected_columns:
-                            unique_values = cluster_data[column].unique()
-                            if len(unique_values) == 1:
-                                st.success(f"Only one category (value) in column {column} for Cluster {cluster_label}: {unique_values[0]}, and the number of it's number is: {len(cluster_data[column])}")
-                            elif ptypes.is_numeric_dtype(cluster_data[column]):
-                                if len(cluster_data[column].unique()) < 0.5 * len(cluster_data[column]):
-                                    if len(cluster_data[column].unique()) > 5:
-                                        if len(cluster_data[column].unique()) < 45:
-                                            if len(cluster_data[column].unique()) > 20:
-                                                plt.figure(figsize=(8, 6))
-                                                sns.histplot(data=cluster_data[column], kde=True)
+                    # Visualize each selected column
+                    for column in selected_columns:
+                        cluster_label = ""  # Initialize the cluster_label variable
+                        st.success(f"Visualizations for Column: {column}")
+                        if ptypes.is_numeric_dtype(preprocessed_data[column]):
+                            if len(preprocessed_data[column].unique()) == 1:
+                                st.success(f"Only one category (value) in column {column} for Cluster {cluster_label}: {preprocessed_data[column].unique()[0]}, and the number of its occurrences is: {len(preprocessed_data[column])}")
+                            else:
+                                if len(preprocessed_data[column].unique()) < 0.5 * len(preprocessed_data[column]):
+                                    if len(preprocessed_data[column].unique()) > 5:
+                                        if len(preprocessed_data[column].unique()) < 30:
+                                            st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                            try:
+                                                plt.figure(figsize=FIG_SIZE)
+                                                cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
+                                                for cluster_label in cluster_labels:
+                                                    cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
+                                                    sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
+                                                plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
+                                                plt.title(f"{column} Histogram Comparison Across Clusters")
+                                                st.pyplot()
+                                            except Exception as e:
+                                                st.error(f"Error occurred during visualization: {e}")
+                                        else:
+                                            st.error(f"Skipping visualization for column {column} due to too many unique values.")
+                                    else:
+                                        st.write(f"Bar Chart for {column} Across Clusters:")
+                                        try:
+                                            if len(preprocessed_data[column].unique()) < 30:
+                                                if len(preprocessed_data[column].unique()) <= 5:
+                                                    g = sns.catplot(x=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
+                                                else:
+                                                    g = sns.catplot(y=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
+                                                for ax in g.axes.flat[1:]:
+                                                    sns.despine(ax=ax, left=True)
+                                                for ax in g.axes.flat:
+                                                    ax.set_xlabel(ax.get_title())
+                                                    ax.set_title('')
+                                                    ax.margins(x=0.1)  # slightly more margin as a separation
                                                 st.pyplot()
                                             else:
-                                                plt.figure(figsize=(8, 6))
-                                                sns.countplot(y=cluster_data[column])
-                                                plt.xticks(rotation=0)
-                                                st.pyplot()
-                                        else:
-                                            st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
-                                    else:
-                                        plt.figure(figsize=(8, 6))
-                                        sns.countplot(x=cluster_data[column])
-                                        plt.xticks(rotation=0)
-                                        st.pyplot()
+                                                st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
+                                        except Exception as e:
+                                            st.error(f"Error occurred during visualization: {e}")
                                 else:
-                                    plt.figure(figsize=(8, 6))
-                                    sns.histplot(data=cluster_data[column], kde=True)
-                                    st.pyplot()
-                            else:
-                                if len(cluster_data[column].unique()) > 5:
-                                    if len(cluster_data[column].unique()) < 45:
-                                        plt.figure(figsize=(8, 6))
-                                        sns.countplot(y=cluster_data[column])
-                                        plt.xticks(rotation=0)
+                                    st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                    try:
+                                        plt.figure(figsize=FIG_SIZE)
+                                        cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
+                                        for cluster_label in cluster_labels:
+                                            cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
+                                            sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
+                                        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
+                                        plt.title(f"{column} Histogram Comparison Across Clusters")
                                         st.pyplot()
+                                    except Exception as e:
+                                        st.error(f"Error occurred during visualization: {e}")
+                        else:
+                            st.write(f"Bar Chart for {column} Across Clusters:")
+                            try:
+                                if len(preprocessed_data[column].unique()) < 30:
+                                    if len(preprocessed_data[column].unique()) <= 5:
+                                        g = sns.catplot(x=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
                                     else:
-                                        st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
-                                else:
-                                    plt.figure(figsize=(8, 6))
-                                    sns.countplot(x=cluster_data[column])
-                                    plt.xticks(rotation=0)
+                                        g = sns.catplot(y=column, hue="Cluster", data=preprocessed_data, kind="count", height=5, aspect=1.5, palette='Set1')
+                                    for ax in g.axes.flat[1:]:
+                                        sns.despine(ax=ax, left=True)
+                                    for ax in g.axes.flat:
+                                        ax.set_xlabel(ax.get_title())
+                                        ax.set_title('')
+                                        ax.margins(x=0.1)  # slightly more margin as a separation
                                     st.pyplot()
+                                else:
+                                    st.error(f"Skipping visualization for column {column} in Cluster {cluster_label} due to too many unique values.")
+                            except Exception as e:
+                                st.error(f"Error occurred during visualization: {e}")
                     st.success("Automatic Clustering completed!")
     
     # Check if categorical_columns exists in session state, and if not, initialize it
