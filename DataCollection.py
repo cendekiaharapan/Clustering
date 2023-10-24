@@ -138,7 +138,7 @@ if uploaded_file is not None:
                 # Visualize each selected column
                 for column in selected_columns:
                     cluster_label = ""  # Initialize the cluster_label variable
-                    st.success(f"Visualizations for Column: {column}")
+                    st.info(f"Visualizations for Column: {column}")
                     if ptypes.is_numeric_dtype(preprocessed_data[column]):
                         if len(preprocessed_data[column].unique()) == 1:
                             st.success(f"Only one category (value) in column {column} for Cluster {cluster_label}: {preprocessed_data[column].unique()[0]}, and the number of its occurrences is: {len(preprocessed_data[column])}")
@@ -146,15 +146,20 @@ if uploaded_file is not None:
                             if len(preprocessed_data[column].unique()) < 0.5 * len(preprocessed_data[column]):
                                 if len(preprocessed_data[column].unique()) > 5:
                                     if len(preprocessed_data[column].unique()) < 30:
-                                        st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                        st.write(f"Histogram Chart for {column} Across Clusters:")
                                         try:
-                                            plt.figure(figsize=FIG_SIZE)
+                                            plt.figure(figsize=(15, 7))  # Adjust the figure size as needed
                                             cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
-                                            for cluster_label in cluster_labels:
+                                            num_clusters = len(cluster_labels)
+                                            num_rows = num_clusters // 2 + num_clusters % 2
+                                            num_cols = 2
+                                            for i, cluster_label in enumerate(cluster_labels):
+                                                plt.subplot(num_rows, num_cols, i + 1)
                                                 cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
-                                                sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
-                                            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
-                                            plt.title(f"{column} Histogram Comparison Across Clusters")
+                                                sns.histplot(data=cluster_data[column], kde=True)
+                                                plt.title(f"Cluster {cluster_label}")
+                                            plt.suptitle(f"{column} Histogram Comparison Across Clusters", y=1.02)  # Add a title for the entire figure
+                                            plt.tight_layout()
                                             st.pyplot()
                                         except Exception as e:
                                             st.error(f"Error occurred during visualization: {e}")
@@ -180,15 +185,20 @@ if uploaded_file is not None:
                                     except Exception as e:
                                         st.error(f"Error occurred during visualization: {e}")
                             else:
-                                st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                st.write(f"Histogram Chart for {column} Across Clusters:")
                                 try:
-                                    plt.figure(figsize=FIG_SIZE)
+                                    plt.figure(figsize=(15, 7))  # Adjust the figure size as needed
                                     cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
-                                    for cluster_label in cluster_labels:
+                                    num_clusters = len(cluster_labels)
+                                    num_rows = num_clusters // 2 + num_clusters % 2
+                                    num_cols = 2
+                                    for i, cluster_label in enumerate(cluster_labels):
+                                        plt.subplot(num_rows, num_cols, i + 1)
                                         cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
-                                        sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
-                                    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
-                                    plt.title(f"{column} Histogram Comparison Across Clusters")
+                                        sns.histplot(data=cluster_data[column], kde=True)
+                                        plt.title(f"Cluster {cluster_label}")
+                                    plt.suptitle(f"{column} Histogram Comparison Across Clusters", y=1.02)  # Add a title for the entire figure
+                                    plt.tight_layout()
                                     st.pyplot()
                                 except Exception as e:
                                     st.error(f"Error occurred during visualization: {e}")
@@ -240,7 +250,7 @@ if uploaded_file is not None:
                 # Visualize each selected column
                 for column in selected_columns:
                     cluster_label = ""  # Initialize the cluster_label variable
-                    st.success(f"Visualizations for Column: {column}")
+                    st.info(f"Visualizations for Column: {column}")
                     if ptypes.is_numeric_dtype(preprocessed_data[column]):
                         if len(preprocessed_data[column].unique()) == 1:
                             st.success(f"Only one category (value) in column {column} for Cluster {cluster_label}: {preprocessed_data[column].unique()[0]}, and the number of its occurrences is: {len(preprocessed_data[column])}")
@@ -248,15 +258,20 @@ if uploaded_file is not None:
                             if len(preprocessed_data[column].unique()) < 0.5 * len(preprocessed_data[column]):
                                 if len(preprocessed_data[column].unique()) > 5:
                                     if len(preprocessed_data[column].unique()) < 30:
-                                        st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                        st.write(f"Histogram Chart for {column} Across Clusters:")
                                         try:
-                                            plt.figure(figsize=FIG_SIZE)
+                                            plt.figure(figsize=(15, 7))  # Adjust the figure size as needed
                                             cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
-                                            for cluster_label in cluster_labels:
+                                            num_clusters = len(cluster_labels)
+                                            num_rows = num_clusters // 2 + num_clusters % 2
+                                            num_cols = 2
+                                            for i, cluster_label in enumerate(cluster_labels):
+                                                plt.subplot(num_rows, num_cols, i + 1)
                                                 cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
-                                                sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
-                                            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
-                                            plt.title(f"{column} Histogram Comparison Across Clusters")
+                                                sns.histplot(data=cluster_data[column], kde=True)
+                                                plt.title(f"Cluster {cluster_label}")
+                                            plt.suptitle(f"{column} Histogram Comparison Across Clusters", y=1.02)  # Add a title for the entire figure
+                                            plt.tight_layout()
                                             st.pyplot()
                                         except Exception as e:
                                             st.error(f"Error occurred during visualization: {e}")
@@ -282,15 +297,20 @@ if uploaded_file is not None:
                                     except Exception as e:
                                         st.error(f"Error occurred during visualization: {e}")
                             else:
-                                st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                st.write(f"Histogram Chart for {column} Across Clusters:")
                                 try:
-                                    plt.figure(figsize=FIG_SIZE)
+                                    plt.figure(figsize=(15, 7))  # Adjust the figure size as needed
                                     cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
-                                    for cluster_label in cluster_labels:
+                                    num_clusters = len(cluster_labels)
+                                    num_rows = num_clusters // 2 + num_clusters % 2
+                                    num_cols = 2
+                                    for i, cluster_label in enumerate(cluster_labels):
+                                        plt.subplot(num_rows, num_cols, i + 1)
                                         cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
-                                        sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
-                                    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
-                                    plt.title(f"{column} Histogram Comparison Across Clusters")
+                                        sns.histplot(data=cluster_data[column], kde=True)
+                                        plt.title(f"Cluster {cluster_label}")
+                                    plt.suptitle(f"{column} Histogram Comparison Across Clusters", y=1.02)  # Add a title for the entire figure
+                                    plt.tight_layout()
                                     st.pyplot()
                                 except Exception as e:
                                     st.error(f"Error occurred during visualization: {e}")
@@ -342,7 +362,7 @@ if uploaded_file is not None:
                     # Visualize each selected column
                     for column in selected_columns:
                         cluster_label = ""  # Initialize the cluster_label variable
-                        st.success(f"Visualizations for Column: {column}")
+                        st.info(f"Visualizations for Column: {column}")
                         if ptypes.is_numeric_dtype(preprocessed_data[column]):
                             if len(preprocessed_data[column].unique()) == 1:
                                 st.success(f"Only one category (value) in column {column} for Cluster {cluster_label}: {preprocessed_data[column].unique()[0]}, and the number of its occurrences is: {len(preprocessed_data[column])}")
@@ -350,15 +370,20 @@ if uploaded_file is not None:
                                 if len(preprocessed_data[column].unique()) < 0.5 * len(preprocessed_data[column]):
                                     if len(preprocessed_data[column].unique()) > 5:
                                         if len(preprocessed_data[column].unique()) < 30:
-                                            st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                            st.write(f"Histogram Chart for {column} Across Clusters:")
                                             try:
-                                                plt.figure(figsize=FIG_SIZE)
+                                                plt.figure(figsize=(15, 7))  # Adjust the figure size as needed
                                                 cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
-                                                for cluster_label in cluster_labels:
+                                                num_clusters = len(cluster_labels)
+                                                num_rows = num_clusters // 2 + num_clusters % 2
+                                                num_cols = 2
+                                                for i, cluster_label in enumerate(cluster_labels):
+                                                    plt.subplot(num_rows, num_cols, i + 1)
                                                     cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
-                                                    sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
-                                                plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
-                                                plt.title(f"{column} Histogram Comparison Across Clusters")
+                                                    sns.histplot(data=cluster_data[column], kde=True)
+                                                    plt.title(f"Cluster {cluster_label}")
+                                                plt.suptitle(f"{column} Histogram Comparison Across Clusters", y=1.02)  # Add a title for the entire figure
+                                                plt.tight_layout()
                                                 st.pyplot()
                                             except Exception as e:
                                                 st.error(f"Error occurred during visualization: {e}")
@@ -384,15 +409,20 @@ if uploaded_file is not None:
                                         except Exception as e:
                                             st.error(f"Error occurred during visualization: {e}")
                                 else:
-                                    st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                    st.write(f"Histogram Chart for {column} Across Clusters:")
                                     try:
-                                        plt.figure(figsize=FIG_SIZE)
+                                        plt.figure(figsize=(15, 7))  # Adjust the figure size as needed
                                         cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
-                                        for cluster_label in cluster_labels:
+                                        num_clusters = len(cluster_labels)
+                                        num_rows = num_clusters // 2 + num_clusters % 2
+                                        num_cols = 2
+                                        for i, cluster_label in enumerate(cluster_labels):
+                                            plt.subplot(num_rows, num_cols, i + 1)
                                             cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
-                                            sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
-                                        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
-                                        plt.title(f"{column} Histogram Comparison Across Clusters")
+                                            sns.histplot(data=cluster_data[column], kde=True)
+                                            plt.title(f"Cluster {cluster_label}")
+                                        plt.suptitle(f"{column} Histogram Comparison Across Clusters", y=1.02)  # Add a title for the entire figure
+                                        plt.tight_layout()
                                         st.pyplot()
                                     except Exception as e:
                                         st.error(f"Error occurred during visualization: {e}")
@@ -473,7 +503,7 @@ if uploaded_file is not None:
                     # Visualize each selected column
                     for column in selected_columns:
                         cluster_label = ""  # Initialize the cluster_label variable
-                        st.success(f"Visualizations for Column: {column}")
+                        st.info(f"Visualizations for Column: {column}")
                         if ptypes.is_numeric_dtype(preprocessed_data[column]):
                             if len(preprocessed_data[column].unique()) == 1:
                                 st.success(f"Only one category (value) in column {column} for Cluster {cluster_label}: {preprocessed_data[column].unique()[0]}, and the number of its occurrences is: {len(preprocessed_data[column])}")
@@ -481,15 +511,20 @@ if uploaded_file is not None:
                                 if len(preprocessed_data[column].unique()) < 0.5 * len(preprocessed_data[column]):
                                     if len(preprocessed_data[column].unique()) > 5:
                                         if len(preprocessed_data[column].unique()) < 30:
-                                            st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                            st.write(f"Histogram Chart for {column} Across Clusters:")
                                             try:
-                                                plt.figure(figsize=FIG_SIZE)
+                                                plt.figure(figsize=(15, 7))  # Adjust the figure size as needed
                                                 cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
-                                                for cluster_label in cluster_labels:
+                                                num_clusters = len(cluster_labels)
+                                                num_rows = num_clusters // 2 + num_clusters % 2
+                                                num_cols = 2
+                                                for i, cluster_label in enumerate(cluster_labels):
+                                                    plt.subplot(num_rows, num_cols, i + 1)
                                                     cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
-                                                    sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
-                                                plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
-                                                plt.title(f"{column} Histogram Comparison Across Clusters")
+                                                    sns.histplot(data=cluster_data[column], kde=True)
+                                                    plt.title(f"Cluster {cluster_label}")
+                                                plt.suptitle(f"{column} Histogram Comparison Across Clusters", y=1.02)  # Add a title for the entire figure
+                                                plt.tight_layout()
                                                 st.pyplot()
                                             except Exception as e:
                                                 st.error(f"Error occurred during visualization: {e}")
@@ -515,15 +550,20 @@ if uploaded_file is not None:
                                         except Exception as e:
                                             st.error(f"Error occurred during visualization: {e}")
                                 else:
-                                    st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                    st.write(f"Histogram Chart for {column} Across Clusters:")
                                     try:
-                                        plt.figure(figsize=FIG_SIZE)
+                                        plt.figure(figsize=(15, 7))  # Adjust the figure size as needed
                                         cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
-                                        for cluster_label in cluster_labels:
+                                        num_clusters = len(cluster_labels)
+                                        num_rows = num_clusters // 2 + num_clusters % 2
+                                        num_cols = 2
+                                        for i, cluster_label in enumerate(cluster_labels):
+                                            plt.subplot(num_rows, num_cols, i + 1)
                                             cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
-                                            sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
-                                        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
-                                        plt.title(f"{column} Histogram Comparison Across Clusters")
+                                            sns.histplot(data=cluster_data[column], kde=True)
+                                            plt.title(f"Cluster {cluster_label}")
+                                        plt.suptitle(f"{column} Histogram Comparison Across Clusters", y=1.02)  # Add a title for the entire figure
+                                        plt.tight_layout()
                                         st.pyplot()
                                     except Exception as e:
                                         st.error(f"Error occurred during visualization: {e}")
@@ -597,7 +637,7 @@ if uploaded_file is not None:
                     # Visualize each selected column
                     for column in selected_columns:
                         cluster_label = ""  # Initialize the cluster_label variable
-                        st.success(f"Visualizations for Column: {column}")
+                        st.info(f"Visualizations for Column: {column}")
                         if ptypes.is_numeric_dtype(preprocessed_data[column]):
                             if len(preprocessed_data[column].unique()) == 1:
                                 st.success(f"Only one category (value) in column {column} for Cluster {cluster_label}: {preprocessed_data[column].unique()[0]}, and the number of its occurrences is: {len(preprocessed_data[column])}")
@@ -605,15 +645,20 @@ if uploaded_file is not None:
                                 if len(preprocessed_data[column].unique()) < 0.5 * len(preprocessed_data[column]):
                                     if len(preprocessed_data[column].unique()) > 5:
                                         if len(preprocessed_data[column].unique()) < 30:
-                                            st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                            st.write(f"Histogram Chart for {column} Across Clusters:")
                                             try:
-                                                plt.figure(figsize=FIG_SIZE)
+                                                plt.figure(figsize=(15, 7))  # Adjust the figure size as needed
                                                 cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
-                                                for cluster_label in cluster_labels:
+                                                num_clusters = len(cluster_labels)
+                                                num_rows = num_clusters // 2 + num_clusters % 2
+                                                num_cols = 2
+                                                for i, cluster_label in enumerate(cluster_labels):
+                                                    plt.subplot(num_rows, num_cols, i + 1)
                                                     cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
-                                                    sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
-                                                plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
-                                                plt.title(f"{column} Histogram Comparison Across Clusters")
+                                                    sns.histplot(data=cluster_data[column], kde=True)
+                                                    plt.title(f"Cluster {cluster_label}")
+                                                plt.suptitle(f"{column} Histogram Comparison Across Clusters", y=1.02)  # Add a title for the entire figure
+                                                plt.tight_layout()
                                                 st.pyplot()
                                             except Exception as e:
                                                 st.error(f"Error occurred during visualization: {e}")
@@ -639,15 +684,20 @@ if uploaded_file is not None:
                                         except Exception as e:
                                             st.error(f"Error occurred during visualization: {e}")
                                 else:
-                                    st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                    st.write(f"Histogram Chart for {column} Across Clusters:")
                                     try:
-                                        plt.figure(figsize=FIG_SIZE)
+                                        plt.figure(figsize=(15, 7))  # Adjust the figure size as needed
                                         cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
-                                        for cluster_label in cluster_labels:
+                                        num_clusters = len(cluster_labels)
+                                        num_rows = num_clusters // 2 + num_clusters % 2
+                                        num_cols = 2
+                                        for i, cluster_label in enumerate(cluster_labels):
+                                            plt.subplot(num_rows, num_cols, i + 1)
                                             cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
-                                            sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
-                                        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
-                                        plt.title(f"{column} Histogram Comparison Across Clusters")
+                                            sns.histplot(data=cluster_data[column], kde=True)
+                                            plt.title(f"Cluster {cluster_label}")
+                                        plt.suptitle(f"{column} Histogram Comparison Across Clusters", y=1.02)  # Add a title for the entire figure
+                                        plt.tight_layout()
                                         st.pyplot()
                                     except Exception as e:
                                         st.error(f"Error occurred during visualization: {e}")
@@ -726,7 +776,7 @@ if uploaded_file is not None:
                     # Visualize each selected column
                     for column in selected_columns:
                         cluster_label = ""  # Initialize the cluster_label variable
-                        st.success(f"Visualizations for Column: {column}")
+                        st.info(f"Visualizations for Column: {column}")
                         if ptypes.is_numeric_dtype(preprocessed_data[column]):
                             if len(preprocessed_data[column].unique()) == 1:
                                 st.success(f"Only one category (value) in column {column} for Cluster {cluster_label}: {preprocessed_data[column].unique()[0]}, and the number of its occurrences is: {len(preprocessed_data[column])}")
@@ -734,15 +784,20 @@ if uploaded_file is not None:
                                 if len(preprocessed_data[column].unique()) < 0.5 * len(preprocessed_data[column]):
                                     if len(preprocessed_data[column].unique()) > 5:
                                         if len(preprocessed_data[column].unique()) < 30:
-                                            st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                            st.write(f"Histogram Chart for {column} Across Clusters:")
                                             try:
-                                                plt.figure(figsize=FIG_SIZE)
+                                                plt.figure(figsize=(15, 7))  # Adjust the figure size as needed
                                                 cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
-                                                for cluster_label in cluster_labels:
+                                                num_clusters = len(cluster_labels)
+                                                num_rows = num_clusters // 2 + num_clusters % 2
+                                                num_cols = 2
+                                                for i, cluster_label in enumerate(cluster_labels):
+                                                    plt.subplot(num_rows, num_cols, i + 1)
                                                     cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
-                                                    sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
-                                                plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
-                                                plt.title(f"{column} Histogram Comparison Across Clusters")
+                                                    sns.histplot(data=cluster_data[column], kde=True)
+                                                    plt.title(f"Cluster {cluster_label}")
+                                                plt.suptitle(f"{column} Histogram Comparison Across Clusters", y=1.02)  # Add a title for the entire figure
+                                                plt.tight_layout()
                                                 st.pyplot()
                                             except Exception as e:
                                                 st.error(f"Error occurred during visualization: {e}")
@@ -768,15 +823,20 @@ if uploaded_file is not None:
                                         except Exception as e:
                                             st.error(f"Error occurred during visualization: {e}")
                                 else:
-                                    st.write(f"Combined Histogram Chart for {column} Across Clusters:")
+                                    st.write(f"Histogram Chart for {column} Across Clusters:")
                                     try:
-                                        plt.figure(figsize=FIG_SIZE)
+                                        plt.figure(figsize=(15, 7))  # Adjust the figure size as needed
                                         cluster_labels = sorted(preprocessed_data['Cluster'].unique())  # Sort cluster labels
-                                        for cluster_label in cluster_labels:
+                                        num_clusters = len(cluster_labels)
+                                        num_rows = num_clusters // 2 + num_clusters % 2
+                                        num_cols = 2
+                                        for i, cluster_label in enumerate(cluster_labels):
+                                            plt.subplot(num_rows, num_cols, i + 1)
                                             cluster_data = preprocessed_data[preprocessed_data['Cluster'] == cluster_label]
-                                            sns.histplot(data=cluster_data[column], kde=True, label=f'Cluster {cluster_label}')
-                                        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')  # Placing the legend outside on the right side
-                                        plt.title(f"{column} Histogram Comparison Across Clusters")
+                                            sns.histplot(data=cluster_data[column], kde=True)
+                                            plt.title(f"Cluster {cluster_label}")
+                                        plt.suptitle(f"{column} Histogram Comparison Across Clusters", y=1.02)  # Add a title for the entire figure
+                                        plt.tight_layout()
                                         st.pyplot()
                                     except Exception as e:
                                         st.error(f"Error occurred during visualization: {e}")
