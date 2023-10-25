@@ -2,20 +2,13 @@ import streamlit as st
 import pandas as pd
 import openpyxl
 from io import BytesIO
-import numpy as np
 import matplotlib.pyplot as plt
-from hdbscan import HDBSCAN
-from sklearn.metrics import silhouette_samples
-from sklearn.preprocessing import LabelEncoder, StandardScaler, OneHotEncoder
 from yellowbrick.cluster import KElbowVisualizer
 from kmodes.kprototypes import KPrototypes
 from kmodes.kmodes import KModes
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import RobustScaler
 import streamlit as st
-import pandas as pd
-import openpyxl
-import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas.api.types as ptypes
 
