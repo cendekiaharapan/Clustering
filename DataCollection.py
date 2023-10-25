@@ -8,7 +8,6 @@ from kmodes.kprototypes import KPrototypes
 from kmodes.kmodes import KModes
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import RobustScaler
-import streamlit as st
 import seaborn as sns
 import pandas.api.types as ptypes
 
